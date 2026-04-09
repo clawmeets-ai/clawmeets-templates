@@ -1,0 +1,51 @@
+{
+  "server_port": 4567,
+  "data_dir": "/tmp/clawmeets_data",
+  "notify_script": "../../scripts/notify.py",
+
+  "server_host": "http://localhost",
+  "name": "ai-la-carte",
+  "admin_password": "clawmeets",
+  "user": {"username": "ai_la_carte", "password": "ai_la_carte", "email": "ai_la_carte@example.com"},
+  "claude_plugin_dir": "../../plugins/clawmeets",
+  "agents": [
+    {
+      "name": "pm",
+      "description": "Product Manager - interviews user personas, defines ICP, scopes MVP features, writes user stories, and prioritizes the backlog based on user research insights",
+      "capabilities": ["ICP definition", "MVP scoping", "user story writing", "feature prioritization", "user interviews", "requirements analysis"],
+      "discoverable": false,
+      "knowledge_dir": "./pm"
+    },
+    {
+      "name": "marketing",
+      "description": "Fractional CMO - develops GTM strategy, positioning, messaging, growth channels, and launch plan based on ICP and persona insights",
+      "capabilities": ["GTM strategy", "positioning", "messaging", "growth channels", "competitive analysis", "launch planning"],
+      "discoverable": false,
+      "knowledge_dir": "./marketing"
+    },
+    {
+      "name": "local_foodie",
+      "description": "User Persona: Local Restaurant Enthusiast - frequent diner who explores ethnic cuisines, represents power users who already navigate unfamiliar menus but want deeper understanding",
+      "capabilities": ["user feedback", "dining experience insights", "ethnic cuisine knowledge", "restaurant discovery patterns", "menu comprehension challenges"],
+      "discoverable": false,
+      "knowledge_dir": "./local_foodie"
+    },
+    {
+      "name": "tourist",
+      "description": "User Persona: International Traveler - encounters foreign-language menus abroad, represents users who need translation and cultural context for unfamiliar food",
+      "capabilities": ["user feedback", "travel dining challenges", "foreign menu experiences", "language barrier insights", "cultural food context needs"],
+      "discoverable": false,
+      "knowledge_dir": "./tourist"
+    },
+    {
+      "name": "casual_diner",
+      "description": "User Persona: Casual Diner - occasionally encounters unfamiliar dishes at local restaurants, represents mainstream users who want simple explanations without feeling intimidated",
+      "capabilities": ["user feedback", "mainstream dining habits", "menu anxiety experiences", "simplicity preferences", "price sensitivity insights"],
+      "discoverable": false,
+      "knowledge_dir": "./casual_diner"
+    }
+  ],
+  "request": "We are a solopreneur building 'AI à la Carte' — a mobile app that helps diners understand unfamiliar menus. Read VISION.md and BRIEF.md for full context.\n\nPhase 1 - User Research: PM should interview each persona agent (local_foodie, tourist, casual_diner) to understand their dining habits, pain points with unfamiliar menus, what they'd want from this app, willingness to pay, and deal-breakers. Ask each persona specific questions — don't just collect generic feedback. Probe for real scenarios and emotional triggers.\n\nPhase 2 - ICP & MVP: PM synthesizes persona interviews into an ICP recommendation (which persona to target first and why), then defines MVP scope: must-have features, explicitly cut features, and user stories for the first release.\n\nPhase 3 - GTM Strategy: Marketing takes PM's ICP and the raw persona insights to develop positioning, messaging, growth channels, pricing model recommendation, and a launch plan. Marketing should reference specific persona quotes/insights to justify channel choices.\n\nAll agents should challenge each other. Personas should push back if the PM or Marketing makes assumptions that don't match their experience. PM and Marketing should debate prioritization trade-offs openly.",
+  "shared_context": "./shared_context",
+  "agent_pool": "owned"
+}

@@ -1,0 +1,28 @@
+{
+  "server_port": 4567,
+  "data_dir": "/tmp/clawmeets_data",
+  "notify_script": "../../scripts/notify.py",
+
+  "server_host": "http://localhost",
+  "name": "trip-research",
+  "admin_password": "clawmeets",
+  "user": {"username": "trip-research", "password": "trip-research", "email": "trip-research@example.com"},
+  "claude_plugin_dir": "../../plugins/clawmeets",
+  "agents": [
+    {
+      "name": "aa",
+      "description": "American Airlines flight search agent - finds and books flights",
+      "capabilities": ["flight search", "pricing", "booking", "itinerary planning"],
+      "discoverable": false
+    },
+    {
+      "name": "hyatt",
+      "description": "Hyatt hotel search agent - finds and books Hyatt hotel accommodations",
+      "capabilities": ["hotel search", "room availability", "pricing", "reservations"],
+      "discoverable": false
+    }
+  ],
+  "request": "Plan a 7-day trip to Tokyo for 2 people, budget $4000. Include flights, hotels, and daily itinerary.",
+  "shared_context": "./shared_context",
+  "agent_pool": "owned"
+}
