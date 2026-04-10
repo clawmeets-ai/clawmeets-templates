@@ -83,8 +83,9 @@ PROJECT_CONFIG=examples/<example>/project.json \
 2. Create `project.json` with your project and agent configuration:
    ```json
    {
-     "server_port": 4567,
-     "data_dir": ".clawmeets_data",
+     "bind_server_port": 4567,
+     "server_url": "http://localhost:4567",
+     "data_dir": "~/.clawmeets_data",
      "notify_script": "../../scripts/notify.py",
 
      "name": "my-project",

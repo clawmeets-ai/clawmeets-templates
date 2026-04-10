@@ -1,9 +1,9 @@
 {
-  "server_port": 4567,
-  "data_dir": "/tmp/clawmeets_data",
+  "bind_server_port": 4567,
+  "data_dir": "~/.clawmeets_data",
   "notify_script": "../../scripts/notify.py",
 
-  "server_host": "http://localhost",
+  "server_url": "http://localhost:4567",
   "name": "ai-la-carte",
   "admin_password": "clawmeets",
   "user": {"username": "ai_la_carte", "password": "ai_la_carte", "email": "ai_la_carte@example.com"},

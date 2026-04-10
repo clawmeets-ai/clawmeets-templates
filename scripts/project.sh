@@ -27,12 +27,12 @@
 #   DATA_DIR / data_dir       Base data directory (default: .clawmeets_data)
 #
 # Environment Variables:
-#   CLAWMEETS_SERVER           Full server URL (overrides server_host + server_port)
-#   CLAWMEETS_SERVER_PORT      Server port (overrides server_port in project.json)
+#   CLAWMEETS_SERVER_URL            Full server URL (e.g. https://clawmeets.ai)
+#   CLAWMEETS_BIND_SERVER_PORT      Port for local server startup (default: 4567)
 #   CLAWMEETS_HAS_ADMIN_CREDENTIAL  "true" = admin create (default), "false" = self-register
-#   CLAWMEETS_USERNAME         Override username from project.json
-#   CLAWMEETS_USER_EMAIL       Override email from project.json
-#   CLAWMEETS_USER_PASSWORD    Override password from project.json
+#   CLAWMEETS_USERNAME              Override username from project.json
+#   CLAWMEETS_USER_EMAIL            Override email from project.json
+#   CLAWMEETS_USER_PASSWORD         Override password from project.json
 #   PROJECT_CONFIG  Project config file (default: project.json)
 #   DEBUG           Set to "true" for verbose debugging output
 #
@@ -55,29 +55,26 @@ load_config() {
     if ! command -v jq &>/dev/null; then
         # jq not available, apply hardcoded defaults
         DATA_DIR="${DATA_DIR:-.clawmeets_data}"
-        SERVER_PORT="${CLAWMEETS_SERVER_PORT:-4567}"
-        SERVER_URL="${CLAWMEETS_SERVER:-http://localhost:${SERVER_PORT}}"
+        BIND_PORT="${CLAWMEETS_BIND_SERVER_PORT:-4567}"
+        SERVER_URL="${CLAWMEETS_SERVER_URL:-http://localhost:${BIND_PORT}}"
     else
         # Load from project.json
         if [[ -f "$PROJECT_CONFIG" ]]; then
             [[ -z "${DATA_DIR:-}" ]] && DATA_DIR=$(jq -r '.data_dir // empty' "$PROJECT_CONFIG")
-            [[ -z "${CLAWMEETS_SERVER_PORT:-}" ]] && \
-                SERVER_PORT=$(jq -r '.server_port // empty' "$PROJECT_CONFIG")
-            # Construct SERVER_URL from server_host + port if CLAWMEETS_SERVER not set
-            if [[ -z "${CLAWMEETS_SERVER:-}" ]]; then
-                local server_host
-                server_host=$(jq -r '.server_host // empty' "$PROJECT_CONFIG")
-                if [[ -n "$server_host" ]]; then
-                    SERVER_URL="${server_host}:${CLAWMEETS_SERVER_PORT:-${SERVER_PORT:-4567}}"
-                fi
-            fi
+            [[ -z "${CLAWMEETS_BIND_SERVER_PORT:-}" ]] && \
+                BIND_PORT=$(jq -r '.bind_server_port // empty' "$PROJECT_CONFIG")
+            [[ -z "${CLAWMEETS_SERVER_URL:-}" ]] && \
+                SERVER_URL=$(jq -r '.server_url // empty' "$PROJECT_CONFIG")
         fi
 
         # Apply defaults; CLAWMEETS_* env vars take highest precedence
         DATA_DIR="${DATA_DIR:-.clawmeets_data}"
-        SERVER_PORT="${CLAWMEETS_SERVER_PORT:-${SERVER_PORT:-4567}}"
-        SERVER_URL="${CLAWMEETS_SERVER:-${SERVER_URL:-http://localhost:${SERVER_PORT}}}"
+        BIND_PORT="${CLAWMEETS_BIND_SERVER_PORT:-${BIND_PORT:-4567}}"
+        SERVER_URL="${CLAWMEETS_SERVER_URL:-${SERVER_URL:-http://localhost:${BIND_PORT}}}"
     fi
+
+    # Expand ~ to $HOME (jq/env values aren't shell-expanded)
+    DATA_DIR="${DATA_DIR/#\~/$HOME}"
 
     # Derive subdirectories from DATA_DIR
     BUS_DIR="${DATA_DIR}/server"
@@ -577,6 +574,41 @@ cmd_init() {
     python -m clawmeets.cli admin init-passwd "$admin_password" \
         --data-dir "$BUS_DIR"
 
+    # Reserve usernames listed in project.json (written directly to passwd file, no server needed)
+    if [[ -n "$PROJECT_CONFIG" && -f "$PROJECT_CONFIG" ]]; then
+        local reserved project_user
+        reserved=$(jq -c '.reserved_usernames // []' "$PROJECT_CONFIG" 2>/dev/null)
+        project_user=$(get_project_user_field "username")
+        if [[ "$reserved" != "[]" && -n "$reserved" ]]; then
+            python3 -c "
+import json, uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+passwd_file = Path('$BUS_DIR') / 'passwd'
+data = json.loads(passwd_file.read_text()) if passwd_file.exists() else {'users': {}}
+existing = {u['username'] for u in data['users'].values()}
+project_user = '$project_user'
+reserved = json.loads('$reserved')
+count = 0
+for name in reserved:
+    if name not in existing and name != project_user:
+        data['users'][str(uuid.uuid4())] = {
+            'username': name,
+            'role': 'user',
+            'password_hash': '!reserved',
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'email': f'{name}@clawmeets.ai',
+            'email_verified': False,
+        }
+        count += 1
+if count:
+    passwd_file.write_text(json.dumps(data, indent=2))
+    print(f'Reserved {count} username(s)')
+"
+        fi
+    fi
+
     # Create local bare git repo if git_url is a relative path that doesn't exist yet
     if [[ -n "$PROJECT_CONFIG" && -f "$PROJECT_CONFIG" ]]; then
         local git_url
@@ -662,9 +694,6 @@ cmd_server() {
         fi
     fi
 
-    # Ensure directories exist
-    cmd_init
-
     # Read batch_timeout from project.json (default: 600 seconds = 10 minutes)
     local batch_timeout=""
     if [[ -n "$PROJECT_CONFIG" && -f "$PROJECT_CONFIG" ]]; then
@@ -674,7 +703,7 @@ cmd_server() {
     # Start server in background
     local server_args=(
         python -m clawmeets.cli server start
-        --port "$SERVER_PORT"
+        --port "$BIND_PORT"
         --data-dir "$BUS_DIR"
     )
     if [[ -n "$batch_timeout" ]]; then
@@ -684,7 +713,7 @@ cmd_server() {
 
     local pid=$!
     echo "$pid" > "$pid_file"
-    echo "Started server on port $SERVER_PORT (PID $pid)"
+    echo "Started server on port $BIND_PORT (PID $pid)"
     echo "Logs: $stdout_log, $stderr_log"
 
     sleep 1
@@ -909,19 +938,25 @@ cmd_verify_agents() {
         return 0
     fi
 
+    local project_user
+    project_user=$(get_project_user_field "username")
+
     echo "$agents_json" | jq -r '.[].name' | while read -r name; do
         [[ -n "$name" ]] || continue
 
+        local prefixed_name
+        prefixed_name=$(prefixed_agent_name "$project_user" "$name")
+
         local agent_id
-        agent_id=$(load_agent_id "$name" 2>/dev/null) || {
-            echo "Agent '$name' not registered, skipping."
+        agent_id=$(load_agent_id "$prefixed_name" 2>/dev/null) || {
+            echo "Agent '$prefixed_name' not registered, skipping."
             continue
         }
 
         python -m clawmeets.cli admin verify-agent "$agent_id" \
             --token "$admin_token" -s "$SERVER_URL" >/dev/null 2>&1 && \
-            echo "Verified agent '$name' ($agent_id)" || \
-            echo "Failed to verify agent '$name' ($agent_id)"
+            echo "Verified agent '$prefixed_name' ($agent_id)" || \
+            echo "Failed to verify agent '$prefixed_name' ($agent_id)"
     done
 }
 
@@ -1458,6 +1493,8 @@ cmd_restart() {
 
     cmd_stop_all
     echo ""
+    cmd_init
+    echo ""
     cmd_server
     echo ""
     cmd_agents
@@ -1491,8 +1528,8 @@ usage() {
     echo "  DATA_DIR / data_dir       Base data directory (default: .clawmeets_data)"
     echo ""
     echo "Environment Variables:"
-    echo "  CLAWMEETS_SERVER              Full server URL (overrides server_host + server_port)"
-    echo "  CLAWMEETS_SERVER_PORT         Server port (overrides server_port in project.json)"
+    echo "  CLAWMEETS_SERVER_URL            Full server URL (e.g. https://clawmeets.ai)"
+    echo "  CLAWMEETS_BIND_SERVER_PORT     Port for local server startup (default: 4567)"
     echo "  CLAWMEETS_HAS_ADMIN_CREDENTIAL  'true' (default) = admin create, 'false' = self-register"
     echo "  CLAWMEETS_USERNAME            Override username from project.json"
     echo "  CLAWMEETS_USER_EMAIL          Override email from project.json"

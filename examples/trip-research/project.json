@@ -1,9 +1,9 @@
 {
-  "server_port": 4567,
-  "data_dir": "/tmp/clawmeets_data",
+  "bind_server_port": 4567,
+  "data_dir": "~/.clawmeets_data",
   "notify_script": "../../scripts/notify.py",
 
-  "server_host": "http://localhost",
+  "server_url": "http://localhost:4567",
   "name": "trip-research",
   "admin_password": "clawmeets",
   "user": {"username": "trip-research", "password": "trip-research", "email": "trip-research@example.com"},
