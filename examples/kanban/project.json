@@ -5,7 +5,7 @@
 
   "server_url": "http://localhost:4567",
   "name": "kanban",
-  "admin_password": "clawmeets",
+  "admin_password": "something_special",
   "user": {"username": "kanban", "password": "kanban", "email": "kanban@example.com"},
   "claude_plugin_dir": "../../plugins/clawmeets",
   "agents": [

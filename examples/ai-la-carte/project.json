@@ -5,7 +5,7 @@
 
   "server_url": "http://localhost:4567",
   "name": "ai-la-carte",
-  "admin_password": "clawmeets",
+  "admin_password": "something_special",
   "user": {"username": "ai_la_carte", "password": "ai_la_carte", "email": "ai_la_carte@example.com"},
   "claude_plugin_dir": "../../plugins/clawmeets",
   "agents": [

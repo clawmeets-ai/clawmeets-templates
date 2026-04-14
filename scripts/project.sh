@@ -649,7 +649,21 @@ cmd_users() {
     [[ -n "$username" ]] || die "No username configured. Set CLAWMEETS_USERNAME or configure .user in project.json."
     [[ -n "$password" ]] || password=$(get_admin_password)
 
-    local has_admin="${CLAWMEETS_HAS_ADMIN_CREDENTIAL:-true}"
+    # Auto-detect: env var > project.json admin_password > default (self-register)
+    local has_admin
+    if [[ -n "${CLAWMEETS_HAS_ADMIN_CREDENTIAL:-}" ]]; then
+        has_admin="$CLAWMEETS_HAS_ADMIN_CREDENTIAL"
+    elif [[ -f "$PROJECT_CONFIG" ]] && command -v jq &>/dev/null; then
+        local admin_pw_in_config
+        admin_pw_in_config=$(jq -r '.admin_password // empty' "$PROJECT_CONFIG")
+        if [[ -n "$admin_pw_in_config" ]]; then
+            has_admin="true"
+        else
+            has_admin="false"
+        fi
+    else
+        has_admin="true"
+    fi
 
     if [[ "$has_admin" == "true" ]]; then
         # Admin-based creation (pre-verified, no email needed)
@@ -752,11 +766,12 @@ cmd_register() {
     fi
 
     echo "$agents_json" | jq -c '.[]' | while read -r agent; do
-        local name desc caps cred_path knowledge_dir prefixed_name
+        local name desc caps cred_path knowledge_dir prefixed_name use_chrome
         name=$(echo "$agent" | jq -r '.name')
         desc=$(echo "$agent" | jq -r '.description // "Worker agent"')
         caps=$(echo "$agent" | jq -r '(.capabilities // []) | join(",")')
         knowledge_dir=$(echo "$agent" | jq -r '.knowledge_dir // empty')
+        use_chrome=$(echo "$agent" | jq -r '.chrome // false')
         # Server will prefix with username, so look up with prefixed name
         prefixed_name=$(prefixed_agent_name "$user_name" "$name")
         cred_path=$(get_credential_path "$prefixed_name")
@@ -783,8 +798,16 @@ cmd_register() {
 
         local agent_dir
         agent_dir=$(get_agent_dir "$prefixed_name")
-        if [[ -n "$agent_dir" && -n "$knowledge_dir" ]]; then
-            echo "{\"knowledge_dir\": \"$knowledge_dir\"}" > "${agent_dir}config.json"
+        if [[ -n "$agent_dir" ]]; then
+            # Build config.json with all agent-specific settings
+            local config="{}"
+            if [[ -n "$knowledge_dir" ]]; then
+                config=$(echo "$config" | jq --arg v "$knowledge_dir" '.knowledge_dir = $v')
+            fi
+            if [[ "$use_chrome" == "true" ]]; then
+                config=$(echo "$config" | jq '.use_chrome = true')
+            fi
+            echo "$config" > "${agent_dir}config.json"
         fi
 
         if [[ -n "$knowledge_dir" ]]; then
@@ -868,10 +891,11 @@ cmd_agents() {
             fi
         fi
 
-        # Read knowledge_dir from config
-        local knowledge_dir=""
+        # Read agent-specific config
+        local knowledge_dir="" use_chrome=""
         if [[ -f "${agent_dir}config.json" ]]; then
             knowledge_dir=$(jq -r '.knowledge_dir // empty' "${agent_dir}config.json")
+            use_chrome=$(jq -r '.use_chrome // empty' "${agent_dir}config.json")
         fi
 
         local cmd_args=(
@@ -881,6 +905,9 @@ cmd_agents() {
         )
         if [[ -n "$knowledge_dir" ]]; then
             cmd_args+=(--knowledge-dir "$knowledge_dir")
+        fi
+        if [[ "$use_chrome" == "true" ]]; then
+            cmd_args+=(--chrome)
         fi
         if [[ -n "$git_url" ]]; then
             cmd_args+=(--git-url "$git_url")
