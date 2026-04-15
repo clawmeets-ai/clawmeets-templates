@@ -95,8 +95,8 @@ PROJECT_CONFIG=examples/<example>/project.json \
        {"username": "alice", "password": "alice-pass", "role": "user"}
      ],
      "agents": [
-       {"name": "agent1", "description": "First agent role", "capabilities": ["task1"], "discoverable": false},
-       {"name": "agent2", "description": "Second agent role", "capabilities": ["task2"], "discoverable": false}
+       {"name": "agent1", "description": "First agent role", "capabilities": ["task1"], "discoverable": false, "knowledge_dir": "./agent1"},
+       {"name": "agent2", "description": "Second agent role", "capabilities": ["task2"], "discoverable": false, "knowledge_dir": "./agent2"}
      ],
      "request": "What you want the agents to accomplish",
      "shared_context": "./shared_context",
@@ -111,7 +111,24 @@ PROJECT_CONFIG=examples/<example>/project.json \
    - `notify_script`: Path to notification script for TTS/desktop notifications (used by `project.sh console`)
    - `request`: *(optional)* Initial request to send to the coordinator. If not configured, `project.sh send` will show sample CLI commands for manual submission.
    - `shared_context`: *(optional)* Directory containing files to upload to the shared-context chatroom. If not configured, `project.sh setup` will show sample CLI commands for manual project creation and file upload.
-   - `git_url`: *(optional)* Git repo URL/path for code-aware sandbox. Each agent's sandbox is cloned from this URL. Code propagates between milestones via git push/fetch.
-   - `git_ignored_folder`: *(optional)* Folder for deliverables that should not be git-tracked (default: `.bus-files`). Files here are synced via changelog but not committed.
+   - `knowledge_dir`: *(per-agent, optional)* Directory containing the agent's domain expertise (CLAUDE.md, reference docs, templates). Agents can read and write here during tasks. Relative paths are resolved from the project.json directory.
+   - `git_url`: *(optional)* Git repo URL/path for code-aware sandbox. Each agent's sandbox is cloned from this URL. Code propagates between milestones via git push/fetch. The repo must be accessible (push and pull) to all agents. If agents run on different machines, use a remote URL rather than a local file path.
+   - `git_ignored_folder`: *(optional)* Folder inside the git repo (added to .gitignore) where agents write deliverable files like reports and plans (default: `.bus-files`). Only relevant when `git_url` is set.
 3. Add any shared context files to `shared_context/` directory
 4. Run with `project.sh` commands
+
+## Setup Wizard
+
+For users connecting to the hosted server at clawmeets.ai, the setup wizard generates your project configuration interactively:
+
+```bash
+./scripts/setup.sh
+```
+
+The wizard walks you through:
+- **Account info** — username, password, and assistant token from clawmeets.ai signup
+- **Data directory** — where agent runtime data is stored (default: `~/.clawmeets_data`)
+- **Agent setup** — name, description, capabilities, knowledge directory, and optional detailed profile for each agent
+- **Git repository** *(optional)* — a git repo for code-aware agent sandboxes, with push/pull validation and a git-ignored folder for deliverables
+
+Output is written to `products/<username>/` with a `project.json` and knowledge directories containing starter CLAUDE.md files for each agent.

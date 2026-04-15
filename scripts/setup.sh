@@ -185,6 +185,23 @@ collect_user_info() {
 }
 
 # ---------------------------------------------------------------------------
+# Collect Data Directory
+# ---------------------------------------------------------------------------
+
+collect_data_dir() {
+    echo -e "${BOLD}${CYAN}--- Data Directory ---${NC}"
+    echo "  Where agent runtime data is stored (credentials, synced projects, sandbox)."
+    echo "  This directory is managed automatically — you don't need to edit it directly."
+    echo ""
+    echo -en "${BOLD}  Data directory${NC} (default: ~/.clawmeets_data): "
+    read -r DATA_DIR_INPUT
+    if [[ -z "$DATA_DIR_INPUT" ]]; then
+        DATA_DIR_INPUT="~/.clawmeets_data"
+    fi
+    echo ""
+}
+
+# ---------------------------------------------------------------------------
 # Collect Agents
 # ---------------------------------------------------------------------------
 
@@ -250,6 +267,15 @@ collect_agents() {
             fi
         done
 
+        # Knowledge directory
+        echo "    Where this agent's domain expertise lives — CLAUDE.md, reference docs,"
+        echo "    templates. Agents can read AND write here during tasks."
+        echo -en "    ${BOLD}Knowledge directory${NC} (default: ./${agent_name}): "
+        read -r agent_knowledge_dir
+        if [[ -z "$agent_knowledge_dir" ]]; then
+            agent_knowledge_dir="./${agent_name}"
+        fi
+
         # Setup description (optional, multi-line)
         echo -en "    ${BOLD}Detailed profile${NC} (optional, describe expertise/workflow. Enter empty line to finish):"
         echo ""
@@ -279,7 +305,7 @@ collect_agents() {
             --arg name "$agent_name" \
             --arg desc "$agent_desc" \
             --argjson caps "$caps_json" \
-            --arg knowledge_dir "./${agent_name}" \
+            --arg knowledge_dir "$agent_knowledge_dir" \
             '{
                 name: $name,
                 description: $desc,
@@ -318,6 +344,108 @@ collect_agents() {
 }
 
 # ---------------------------------------------------------------------------
+# Collect Git Repository
+# ---------------------------------------------------------------------------
+
+validate_git_repo() {
+    local url="$1"
+
+    # For relative paths that don't exist yet, they'll be created as bare repos at registration
+    if [[ "$url" != /* && "$url" != http* && "$url" != git@* ]]; then
+        local resolved="${OUTPUT_DIR}/${url}"
+        if [[ ! -d "$resolved" ]]; then
+            setup_msg "Path doesn't exist yet — a bare repo will be created during registration."
+            return 0
+        fi
+    fi
+
+    # Test read access
+    echo -e "  ${GRAY}Checking pull access...${NC}"
+    if ! git ls-remote "$url" HEAD &>/dev/null; then
+        echo -e "  ${YELLOW}[Warning]${NC} Failed to access repo (check URL and credentials)."
+        return 1
+    fi
+    echo -e "  ${GREEN}Pull access: OK${NC}"
+
+    # Test write access via temp clone + dry-run push
+    echo -e "  ${GRAY}Checking push access...${NC}"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    local push_ok=false
+    if git clone --depth 1 --quiet "$url" "$tmp_dir/repo" &>/dev/null; then
+        if (cd "$tmp_dir/repo" && git push --dry-run origin HEAD &>/dev/null 2>&1); then
+            push_ok=true
+        fi
+    fi
+    rm -rf "$tmp_dir"
+
+    if [[ "$push_ok" != "true" ]]; then
+        echo -e "  ${YELLOW}[Warning]${NC} Repo is readable but NOT push-able (check permissions)."
+        return 1
+    fi
+    echo -e "  ${GREEN}Push access: OK${NC}"
+
+    return 0
+}
+
+collect_git_repo() {
+    echo -e "${BOLD}${CYAN}--- Git Repository (Optional) ---${NC}"
+    echo "  A git repo enables code-aware agent sandboxes. When set, agents clone this"
+    echo "  repo as their working directory and work on branches per task."
+    echo ""
+    echo -e "  ${BOLD}Important:${NC}"
+    echo "  • The repo must be accessible to ALL agents. If agents run on different"
+    echo "    machines, use a remote URL (e.g., git@github.com:org/repo.git), not a"
+    echo "    local file path."
+    echo "  • Agents are REQUIRED to use the cloned repo as their working directory,"
+    echo "    so you must designate a git-ignored folder inside the repo where agents"
+    echo "    produce deliverable files for projects and chatrooms."
+    echo ""
+
+    GIT_URL=""
+    GIT_IGNORED_FOLDER=""
+
+    while true; do
+        echo -en "  ${BOLD}Git repository URL${NC} (leave empty to skip): "
+        read -r GIT_URL
+        if [[ -z "$GIT_URL" ]]; then
+            echo ""
+            return
+        fi
+
+        if validate_git_repo "$GIT_URL"; then
+            break
+        fi
+
+        echo ""
+        echo -en "  ${BOLD}(r)etry / (s)kip?${NC} "
+        read -r choice
+        case "$choice" in
+            s|S)
+                GIT_URL=""
+                echo ""
+                return
+                ;;
+            *)
+                echo ""
+                continue
+                ;;
+        esac
+    done
+
+    # Ask for git-ignored folder
+    echo ""
+    echo "  Git-ignored folder: a folder inside the repo (added to .gitignore) where"
+    echo "  agents write deliverable files like reports and plans."
+    echo -en "  ${BOLD}Git-ignored folder${NC} (default: .bus-files): "
+    read -r GIT_IGNORED_FOLDER
+    if [[ -z "$GIT_IGNORED_FOLDER" ]]; then
+        GIT_IGNORED_FOLDER=".bus-files"
+    fi
+    echo ""
+}
+
+# ---------------------------------------------------------------------------
 # Confirmation
 # ---------------------------------------------------------------------------
 
@@ -331,17 +459,25 @@ confirm_summary() {
     else
         echo -e "  ${BOLD}Assistant:${NC} ${YELLOW}no token (can be added later)${NC}"
     fi
+    echo -e "  ${BOLD}Data dir:${NC} ${DATA_DIR_INPUT}"
+    if [[ -n "$GIT_URL" ]]; then
+        echo -e "  ${BOLD}Git repo:${NC} ${GIT_URL}"
+        echo -e "  ${BOLD}Git-ignored folder:${NC} ${GIT_IGNORED_FOLDER}"
+    else
+        echo -e "  ${BOLD}Git repo:${NC} ${GRAY}none${NC}"
+    fi
     echo -e "  ${BOLD}Agents:${NC}   ${#AGENT_NAMES[@]}"
     echo ""
 
     echo "$AGENTS_JSON" | jq -c '.[]' | while read -r agent; do
-        local name desc caps
+        local name desc caps kdir
         name=$(echo "$agent" | jq -r '.name')
         desc=$(echo "$agent" | jq -r '.description')
         caps=$(echo "$agent" | jq -r '.capabilities | join(", ")')
+        kdir=$(echo "$agent" | jq -r '.knowledge_dir')
         echo -e "    ${BOLD}${name}${NC} - ${desc}"
         echo -e "      Capabilities: ${caps}"
-        echo -e "      Knowledge dir: ./${name}"
+        echo -e "      Knowledge dir: ${kdir}"
         echo ""
     done
 
@@ -363,12 +499,16 @@ confirm_summary() {
 generate_project_json() {
     local output_file="${OUTPUT_DIR}/project.json"
 
-    jq -n \
+    local json
+    json=$(jq -n \
         --arg server_url "https://clawmeets.ai" \
         --arg name "$USERNAME" \
         --arg user_name "$USERNAME" \
         --arg user_pass "$PASSWORD" \
         --arg assistant_token "${ASSISTANT_TOKEN:-}" \
+        --arg data_dir "${DATA_DIR_INPUT}" \
+        --arg git_url "${GIT_URL:-}" \
+        --arg git_ignored_folder "${GIT_IGNORED_FOLDER:-}" \
         --argjson agents "$AGENTS_JSON" \
         '{
             server_url: $server_url,
@@ -376,7 +516,13 @@ generate_project_json() {
             user: ({ username: $user_name, password: $user_pass } + (if $assistant_token != "" then { assistant_token: $assistant_token } else {} end)),
             agents: $agents,
             agent_pool: "owned"
-        }' > "$output_file"
+        }
+        + (if $data_dir != "~/.clawmeets_data" then { data_dir: $data_dir } else {} end)
+        + (if $git_url != "" then { git_url: $git_url } else {} end)
+        + (if $git_url != "" and $git_ignored_folder != "" then { git_ignored_folder: $git_ignored_folder } else {} end)
+        ')
+
+    echo "$json" > "$output_file"
 
     setup_msg "Generated project.json"
 }
@@ -385,10 +531,19 @@ generate_claude_md() {
     local agent_name="$1"
     local agent_json="$2"
 
-    local desc caps_csv knowledge_dir
+    local desc caps_csv knowledge_dir raw_knowledge_dir
     desc=$(echo "$agent_json" | jq -r '.description')
     caps_csv=$(echo "$agent_json" | jq -r '.capabilities | join(", ")')
-    knowledge_dir="${OUTPUT_DIR}/${agent_name}"
+    raw_knowledge_dir=$(echo "$agent_json" | jq -r '.knowledge_dir')
+
+    # Resolve knowledge_dir for file generation
+    if [[ "$raw_knowledge_dir" == /* ]]; then
+        knowledge_dir="$raw_knowledge_dir"
+    elif [[ "$raw_knowledge_dir" == ~/* ]]; then
+        knowledge_dir="${HOME}/${raw_knowledge_dir#\~/}"
+    else
+        knowledge_dir="${OUTPUT_DIR}/${raw_knowledge_dir#./}"
+    fi
 
     mkdir -p "$knowledge_dir"
 
@@ -485,8 +640,13 @@ print_next_steps() {
     echo ""
     echo -e "  ${BOLD}Generated:${NC}"
     echo "    products/${USERNAME}/project.json"
-    for name in "${AGENT_NAMES[@]}"; do
-        echo "    products/${USERNAME}/${name}/CLAUDE.md"
+    echo "$AGENTS_JSON" | jq -r '.[].knowledge_dir' | while read -r kdir; do
+        if [[ "$kdir" == /* ]]; then
+            echo "    ${kdir}/CLAUDE.md"
+        else
+            kdir="${kdir#./}"
+            echo "    products/${USERNAME}/${kdir}/CLAUDE.md"
+        fi
     done
     echo ""
     echo -e "  ${BOLD}Next steps:${NC}"
@@ -524,7 +684,9 @@ main() {
     require_jq
     print_banner
     collect_user_info
+    collect_data_dir
     collect_agents
+    collect_git_repo
     confirm_summary
     generate_output
     print_next_steps
