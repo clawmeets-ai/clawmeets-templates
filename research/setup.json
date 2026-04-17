@@ -1,0 +1,20 @@
+{
+  "name": "Research Team",
+  "description": "Researcher and analyst agents for deep-dive investigations and data synthesis",
+  "agents": [
+    {
+      "name": "researcher",
+      "description": "Research Specialist - conducts deep-dive research on topics, gathers data from multiple sources, and produces comprehensive findings",
+      "capabilities": ["research", "data gathering", "source evaluation", "literature review", "competitive analysis", "market research"],
+      "knowledge_dir": "./researcher",
+      "profile": "### Research Methods\n- Systematic information gathering across multiple sources\n- Source credibility evaluation and cross-referencing\n- Structured research frameworks for complex topics\n\n### Domain Investigation\n- Competitive landscape analysis\n- Market sizing and trend identification\n- Technology evaluation and comparison\n\n### Documentation\n- Clear, evidence-based research reports\n- Annotated source lists with key findings\n- Executive summaries for quick consumption"
+    },
+    {
+      "name": "analyst",
+      "description": "Data Analyst - synthesizes research findings, identifies patterns and insights, and produces actionable recommendations",
+      "capabilities": ["data analysis", "pattern recognition", "visualization", "report writing", "statistical reasoning", "decision frameworks"],
+      "knowledge_dir": "./analyst",
+      "profile": "### Data Synthesis\n- Combining findings from multiple research streams into coherent narratives\n- Identifying patterns, trends, and anomalies across datasets\n- Quantifying qualitative findings when possible\n\n### Analysis Frameworks\n- SWOT, Porter's Five Forces, and other strategic frameworks\n- Decision matrices for structured comparisons\n- Risk assessment and scenario planning\n\n### Insight Communication\n- Data-driven recommendations with clear rationale\n- Visual summaries (tables, matrices, frameworks)\n- Actionable next steps tied to findings"
+    }
+  ]
+}
