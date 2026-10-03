@@ -19,7 +19,7 @@
       "blurb": "Sizes demand and evaluates sites for new locations",
       "description": "Market Analyst - sizes demand, evaluates sites and trade areas, profiles competitors and customers, and produces go/no-go recommendations on new locations. Reads foot-traffic and demographics data, scouts adjacencies, and builds the case for where the next store should land.",
       "capabilities": ["market sizing", "trade area analysis", "site selection", "competitive landscape", "customer segmentation", "demand forecasting", "survey design"],
-      "knowledge_dir": "./market_analyst",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Demand", "title": "Size demand for a new location", "request": "Estimate reachable population in [Trade area: e.g. 5-mile radius around 2nd & Main, Austin], benchmark against comparable stores, and forecast traffic with seasonality."},
         {"category": "Demand", "title": "Day-part + seasonality model", "request": "Map expected day-part patterns and seasonality for [Concept: e.g. specialty coffee + bakery], including weather/holiday effects."},
@@ -36,7 +36,7 @@
       "blurb": "Builds P&L forecasts and break-even analysis",
       "description": "Financial Planner - builds P&L forecasts, break-even and payback analysis, pricing, capex budgets, and funding options. Stress-tests assumptions under different demand scenarios and surfaces the numbers that decide whether a new store, SKU, or campaign passes the bar.",
       "capabilities": ["P&L modeling", "unit economics", "break-even analysis", "pricing strategy", "capex planning", "cash flow forecasting", "scenario analysis", "SBA/financing options"],
-      "knowledge_dir": "./finance",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "P&L", "title": "Build a 24-month P&L", "request": "Build a monthly 24-month P&L for [Concept: e.g. specialty coffee + bakery] tied to traffic × conversion × ticket, with fixed/variable splits and store-level EBITDA."},
         {"category": "P&L", "title": "Break-even + payback", "request": "Compute break-even month, payback period, and the contribution margin for [Concept: e.g. specialty coffee + bakery]."},
@@ -53,7 +53,7 @@
       "blurb": "Owns positioning, launch campaign, and loyalty",
       "description": "Marketing Lead - develops positioning, launch campaign, local marketing, loyalty, and ongoing growth channels. Designs the in-store experience to land the brand promise, plans grand openings, runs the local-radius marketing playbook, and reads what drives repeat visits.",
       "capabilities": ["positioning", "launch planning", "local marketing", "social media", "paid acquisition", "loyalty programs", "PR", "content strategy", "community partnerships"],
-      "knowledge_dir": "./marketing",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Positioning", "title": "One-sentence positioning", "request": "Draft a one-sentence positioning for [Concept: e.g. specialty coffee + bakery]: for whom, what they get, why it's different from the closest alternative."},
         {"category": "Positioning", "title": "Naming + tagline shortlist", "request": "Generate 10 names + tagline pairs for [Concept: e.g. specialty coffee + bakery], then narrow to a shortlist with rationale."},

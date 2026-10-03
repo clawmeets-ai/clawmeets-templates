@@ -19,7 +19,7 @@
       "blurb": "Builds the target list, scores ICP fit, finds the named contact + best channel, and hands the tier split to Inside Sales (digital) or Field Sales (in-person)",
       "description": "Sales Development Rep - top-of-funnel lead gen and qualification: ICP target-list build, ICP fit scoring, buying-signal scans, persona qualification, contact discovery (named decision-maker + email/LinkedIn/phone + best channel), disqualification checks, tier splits, and clean handoff packets to inside_sales (digital cadence) or field_sales (in-person cadence)",
       "capabilities": ["ICP target-list build", "ICP fit scoring", "buying-signal scans", "persona qualification", "named-contact sourcing", "contact-method discovery (email/LinkedIn/phone)", "email-pattern inference", "disqualification checks", "tier splits", "lead-list hygiene", "handoff packets", "cold-dead lead re-qualification"],
-      "knowledge_dir": "./sales_dev",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Lead gen", "title": "ICP target-list build from a segment", "request": "Build the target-account list for [Segment: e.g. Series B–D SaaS, 200–2000 headcount, HQ North America] from public sources + my CRM exports. Score on ICP fit, rank by fit × signal, output a one-sentence why-now per row. Flag the long tail honestly — public-source enrichment is wrong some of the time; never bluff a confidence you don't have."},
         {"category": "Lead gen", "title": "Buying-signal scan over a list", "request": "For [List: paste accounts or point at my CRM export], scan public sources for recent buying signals (funding / hiring velocity / M&A / product launches / exec moves). Surface the accounts with the strongest why-now, discard stale signals (>90 days) and signals everyone has already touched."},
@@ -40,7 +40,7 @@
       "blurb": "Runs cold email + digital follow-up cadence for the qualified-but-not-strategic tier",
       "description": "Inside Sales - runs cold email outreach + digital follow-up cadence: first-touch emails, A/B variants, multi-step sequences, trigger-based one-offs, reply triage, meeting-ask after positive reply, channel-switch decisions, and re-engagement of cold-dead leads",
       "capabilities": ["cold email drafting", "subject-line + first-line A/B variants", "multi-step follow-up cadence", "trigger-based one-offs", "reply triage", "meeting-ask after positive reply", "channel-switch decisions", "digital re-engagement", "kill-rule enforcement"],
-      "knowledge_dir": "./inside_sales",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Cold email", "title": "First-touch cold email", "request": "Draft the first-touch cold email to [Persona: e.g. mid-market CFO at fintech] for [Account]: 50–90 words, one ask, no attachments, first-line tied to a real signal from the pre-touch brief in my knowledge folder, subject line engineered for reply rate (4–6 words, lowercase, curiosity over clever)."},
         {"category": "Cold email", "title": "A/B variants for an opener", "request": "Generate 3 subject-line + first-line variants for [Message: paste your current draft]. Tell me which one to A/B test first and why (strongest hypothesis, not coin flip)."},
@@ -59,7 +59,7 @@
       "blurb": "Runs cold-visit pitch + in-person follow-up cadence for strategic and VP+ accounts",
       "description": "Field Sales - runs cold-visit pitch and in-person follow-up cadence for the strategic / VP+ tier: pre-visit account briefs, 30-second cold openers, long + short cold pitches, conference / event on-site motion, post-visit follow-up cadence, exec-sponsor in-person touches, and re-warming stalled accounts",
       "capabilities": ["pre-visit account briefs", "30-second cold opener", "cold visit pitch (long + short)", "pitch resistance handling", "conference target lists", "on-site cold pitch hooks", "post-visit follow-up cadence", "exec-sponsor in-person touches", "re-warm after stall"],
-      "knowledge_dir": "./field_sales",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Pre-visit", "title": "Pre-visit account brief", "request": "Build the pre-visit brief for [Account: company name + city]: economic buyer + champion + blocker mapped (tenure + prior-company context, public sources only), recent buying signals, the one why-now hook tied to their business, and the warm-intro paths I actually have (named by person, not category)."},
         {"category": "Cold visit", "title": "30-second cold opener", "request": "Draft the 30-second cold opener I'd use at reception or in a hallway run-in at [Account]. Earns the next 5 minutes without sounding like a sales pitch — tied to the pre-visit brief's why-now, not a deck-read."},

@@ -33,7 +33,7 @@
         "board state management",
         "turn arbitration"
       ],
-      "knowledge_dir": "./gamemaster",
+      "knowledge_dir": "./knowledge",
       "llm_provider": "claude",
       "mcp_servers": [
         "chess"
@@ -74,7 +74,7 @@
         "opening theory",
         "tactical calculation"
       ],
-      "knowledge_dir": "./white",
+      "knowledge_dir": "./knowledge",
       "llm_provider": "gemini",
       "llm_model": "gemini-2.5-pro",
       "sample_requests": [
@@ -113,7 +113,7 @@
         "defensive structures",
         "counterattack"
       ],
-      "knowledge_dir": "./black",
+      "knowledge_dir": "./knowledge",
       "llm_provider": "openai",
       "sample_requests": [
         {
@@ -151,7 +151,7 @@
         "pattern recognition",
         "dramatic storytelling"
       ],
-      "knowledge_dir": "./narrator",
+      "knowledge_dir": "./knowledge",
       "llm_provider": "claude",
       "sample_requests": [
         {

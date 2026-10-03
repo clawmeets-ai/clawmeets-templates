@@ -19,7 +19,7 @@
       "blurb": "Tracks spending and flags lifestyle creep",
       "description": "Budget Analyst - tracks where your money actually goes, spots anomalies and lifestyle creep, watches your savings rate, and runs the monthly review",
       "capabilities": ["cash flow analysis", "spend categorization", "anomaly detection", "savings rate tracking", "emergency fund planning", "monthly review", "budget vs. actual"],
-      "knowledge_dir": "./budget_analyst",
+      "knowledge_dir": "./knowledge",
       "skills": ["web-artifacts"],
       "sample_requests": [
         {"category": "Monthly review", "title": "Run my monthly money date", "request": "Pull last month's spending from my exports, give me net worth + cash flow + savings rate, and pick the ONE focus for next month."},
@@ -37,7 +37,7 @@
       "blurb": "Frames portfolio allocation and rebalancing",
       "description": "Investment Advisor - frames your portfolio allocation, account strategy, and rebalancing rhythm — educational only, never a substitute for a licensed CFP",
       "capabilities": ["asset allocation", "diversification", "account strategy", "rebalancing", "tax-advantaged accounts", "retirement projections", "risk framing"],
-      "knowledge_dir": "./investment_advisor",
+      "knowledge_dir": "./knowledge",
       "skills": ["web-artifacts"],
       "sample_requests": [
         {"category": "Allocation", "title": "Frame my portfolio allocation", "request": "Educational only: frame an age + goal + risk-tolerance appropriate stock/bond/cash split, with US/intl and large/small splits inside equities."},
@@ -55,7 +55,7 @@
       "blurb": "Runs year-end tax planning and quarterly estimates",
       "description": "Tax Strategist - runs year-end planning moves, tracks deductions through the year, calculates quarterly estimates, and gets your documents ready for your CPA",
       "capabilities": ["year-end planning", "deduction tracking", "quarterly estimates", "tax-loss harvesting", "Roth conversions", "charitable strategy", "document collection"],
-      "knowledge_dir": "./tax_strategist",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Year-end moves", "title": "Year-end tax checklist", "request": "Build my Q4 tax checklist: harvest, Roth conversion room, charitable bunching, and max-out deadlines for 401k / IRA / HSA / FSA."},
         {"category": "Year-end moves", "title": "Roth conversion sizing", "request": "Look at my income this year and tell me how much Roth conversion room I have before bumping a bracket."},

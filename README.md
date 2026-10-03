@@ -23,8 +23,8 @@ You can combine templates by running `clawmeets init --from-url` multiple times 
 | [`finance`](./finance/README.md) | Budget Analyst, Investment Advisor, Tax Strategist | Personal CFO crew: monthly budget, investments, and tax strategy |
 | [`solopreneur`](./solopreneur/README.md) | Product, Market, Investor, Branding | Three iterative loops orchestrated by your assistant — PMF (product ↔ market), pitch (product ↔ investor), Amazon-style announcement email (branding ↔ product) — pivots back on wedge or defensibility failure |
 | [`engineering`](./engineering/README.md) | Designer, Backend, Frontend, DevOps | Full-stack software development team |
-| [`data`](./data/README.md) | DB Sync, Drive Sync, API Sync, Data Scientist | Business data team: sync DB / Drive / APIs into a local warehouse; one analytical agent explores, hypothesis-tests, builds features, answers business questions, and promotes mature analyses to scheduled derived views |
-| [`personal_data`](./personal_data/README.md) | Mailbox, Calendar, Photo, Data Organizer | Personal data warehouse over standard protocols (IMAP+SMTP, CalDAV, macOS Photos) — sync your real mail / calendar / photo metadata into a local warehouse on a schedule, AND address each agent conversationally for ad-hoc search/send/lookup. Provider-agnostic (Gmail app-password, iCloud, Fastmail, Outlook, ProtonMail Bridge, Nextcloud, Radicale, self-hosted). `@data_organizer` owns the derivation layer (rule design + cross-template handoff to finance) |
+| [`data`](./data/README.md) | DB Sync, Drive Sync, API Sync, Data Scientist | Business data team: sync DB / Drive / APIs into local stores, each syncer following an SOP you keep in My Desk; one analytical agent explores, hypothesis-tests, builds features, answers business questions, and promotes mature analyses to scheduled SOPs |
+| [`personal_data`](./personal_data/README.md) | Mailbox, Calendar, Photo, Data Organizer | Personal data over standard protocols (IMAP+SMTP, CalDAV, macOS Photos) — sync your real mail / calendar / photo metadata into local stores on a schedule (each agent follows a sync SOP you keep in My Desk), AND address each agent conversationally for ad-hoc search/send/lookup. Provider-agnostic (Gmail app-password, iCloud, Fastmail, Outlook, ProtonMail Bridge, Nextcloud, Radicale, self-hosted). `@data_organizer` owns the derivation layer (SOP-driven derived tables + cross-template handoff to finance) |
 | [`retail`](./retail/README.md) | Market Analyst, Finance, Marketing | New locations, product-line launches, and growth moves for retail/restaurant/service owners |
 | [`restaurant`](./restaurant/README.md) | Market Analyst, Menu Finance, Brand, Designer | Restaurant audit + redesign crew: crawl your site, harvest menu + prices, read PMF and pricing, sharpen positioning, ship the new visual identity and a working HTML mockup of the redesigned homepage + menu |
 | [`sales`](./sales/README.md) | Sales Dev, Inside Sales, Field Sales | Top-of-funnel pipeline crew: SDR builds the list and qualifies, Inside Sales runs cold email + digital follow-up cadence, Field Sales runs cold-visit pitch + in-person follow-up cadence |
@@ -54,7 +54,7 @@ Each template is a `setup.json` file with agent definitions. Templates describe 
       "name": "agent_name",
       "description": "One-line description",
       "capabilities": ["skill1", "skill2"],
-      "knowledge_dir": "./agent_name",
+      "knowledge_dir": "./knowledge",
       "user_teams": ["Marketing", "Outbound"],
       "llm_provider": "claude",
       "llm_model": "claude-opus-4-7",
@@ -102,16 +102,20 @@ untouched so hand-edited profiles survive a re-run.
 
 ### `knowledge_dir` path rules
 
-`knowledge_dir` accepts three forms, resolved identically at init time and at
-runner startup:
+`knowledge_dir` accepts three forms, resolved at runner startup and on every
+settings change:
 
 | Form | Resolves to |
 |------|-------------|
-| `./kb`, `kb`, `../kb` (relative) | `~/.clawmeets/config/<username>/kb/` — the same folder `clawmeets init` writes `CLAUDE.md` into |
+| `./kb`, `kb`, `../kb` (relative) | `~/.clawmeets/agents/<agent>/kb/` — inside the agent's own folder (AGENT_DIR), next to its memory and sandbox |
 | `~/kb` (home-prefixed) | `~/kb` (expanded against the runner user's home) |
 | `/abs/path` (absolute) | `/abs/path` (used verbatim) |
 
-Prefer relative paths in shared templates — they stay portable across users.
+Prefer `./knowledge` in shared templates — it stays portable across users and
+gives each agent its own folder. (Older cards held paths such as
+`./career_coach` that resolved under `~/.clawmeets/config/<username>/`; the
+runner moves such a folder into `AGENT_DIR/knowledge` once on its next start,
+or pins the card to the old absolute path when two agents shared it.)
 Use absolute paths in per-user product configs (see `products/chus-wine`)
 when the knowledge base already lives in a known location outside
 `~/.clawmeets/`.

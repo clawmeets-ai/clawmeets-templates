@@ -23,7 +23,7 @@
       "blurb": "Owns onboarding, ongoing health, and expansion across the portfolio",
       "description": "Account Specialist - runs the relationship side of the customer lifecycle: onboarding plans + kickoffs, ongoing health monitoring, QBR prep, and expansion theses tied to value delivered",
       "capabilities": ["onboarding plans", "kickoff agendas", "time-to-first-value tracking", "stakeholder mapping", "health scoring", "usage analysis", "QBR prep", "exec escalation paths", "customer-facing comms", "expansion thesis", "land-and-expand sequencing", "renewal forecasting"],
-      "knowledge_dir": "./account_specialist",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Onboarding", "title": "30/60/90 onboarding plan", "request": "Build the 30/60/90 onboarding plan for [Account: company name] tied to time-to-first-value. Milestones with customer-side owners, the success criterion each milestone unlocks, and the one risk in the first 30 days that predicts a stalled rollout."},
         {"category": "Onboarding", "title": "Kickoff agenda + stakeholder map", "request": "Draft the kickoff agenda for [Account: company name] — the 5 things they need to hear in the first 30 minutes and the 3 commitments we need by the end. Pair it with the stakeholder map (economic buyer, champion, daily user, blocker) with the warm-intro path or first-touch ask for each."},
@@ -41,7 +41,7 @@
       "blurb": "Triages tickets, drafts responses, handles general inquiries, distills FAQs",
       "description": "Customer Support - runs the inbox: ticket triage by customer-perceived severity, general customer inquiry handling, response drafts that acknowledge fast without overpromising, internal escalation maps, customer comms through resolution, and recurring-question distillation into FAQs",
       "capabilities": ["ticket triage", "severity scoring", "general inquiry handling", "response drafting", "tone calibration", "escalation routing", "internal handoff notes", "customer-facing comms cadences", "FAQ authoring", "after-action / RCA prompts", "knowledge base curation"],
-      "knowledge_dir": "./customer_support",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Triage", "title": "Triage today's queue", "request": "Rank every open ticket by both internal severity AND customer-perceived severity — flag the deltas. Group green/yellow/red with the single next action per ticket (respond now / await info / escalate to <team>). Surface the 3 tickets I personally need to look at this morning."},
         {"category": "Triage", "title": "Severity vs. customer-perceived severity", "request": "For [Ticket: paste ID + content], score internal severity (impact × scope × workaround availability) AND customer-perceived severity (how much pain are they in, how much does this block them right now). Tell me which one to use for SLA and which one to use for response tone."},

@@ -20,7 +20,7 @@
       "blurb": "Designs clean UI flows with clear information hierarchy",
       "description": "UI/UX Designer who creates clean designs with clear information hierarchy, optimizes user flows based on mission criticality, and ensures consistency across screens. Owns interaction patterns, accessibility considerations, and the visual system that downstream engineers implement.",
       "capabilities": ["user research", "wireframing", "design systems", "information architecture", "user flow optimization", "accessibility", "visual hierarchy"],
-      "knowledge_dir": "./designer",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Flows", "title": "Wireframe a new feature", "request": "Wireframe the user flow for [Feature: comment threads on tasks] — primary path, edge cases, and where I should resist adding steps."},
         {"category": "Flows", "title": "Audit an existing flow", "request": "Walk through [Flow: e.g. signup or checkout] and find the friction — where users drop off, where the IA fights them, what to cut."},
@@ -37,7 +37,7 @@
       "blurb": "Builds Python APIs and database-backed services",
       "description": "Backend Engineer who builds Python APIs with databases, designs data models and RESTful endpoints, owns auth/authz, and writes the integration tests that prove the service end-to-end. Brings opinions on schema migrations, idempotency, and graceful failure modes.",
       "capabilities": ["Python", "FastAPI", "SQL", "API design", "data modeling", "database schema", "REST endpoints"],
-      "knowledge_dir": "./backend",
+      "knowledge_dir": "./knowledge",
       "skills": ["coding-plan"],
       "sample_requests": [
         {"category": "API", "title": "Design a new API surface", "request": "Design a clean REST surface for [Resource: e.g. comments on tasks] — endpoints, verbs, request/response shapes with validation, and error semantics."},
@@ -55,7 +55,7 @@
       "blurb": "Builds React TypeScript components and state flows",
       "description": "Frontend Engineer who implements React applications with TypeScript, builds reusable components and manages application state, wires up data fetching and form validation, and translates designer specs into production-ready screens with attention to loading, error, and empty states.",
       "capabilities": ["React", "TypeScript", "component architecture", "state management", "CSS", "responsive design", "accessibility"],
-      "knowledge_dir": "./frontend",
+      "knowledge_dir": "./knowledge",
       "skills": ["web-artifacts", "coding-plan"],
       "sample_requests": [
         {"category": "Components", "title": "Build this component from a wireframe", "request": "Translate **the attached wireframe** into a React + TypeScript component with reusable subcomponents and proper prop types."},
@@ -73,7 +73,7 @@
       "blurb": "Runs the code and verifies it works end-to-end",
       "description": "DevOps Engineer who runs and verifies code, sets up development environments, ensures the application works end-to-end, owns CI/CD pipelines, and shakes out integration issues before they hit production. The final gate before a feature is called done.",
       "capabilities": ["shell scripting", "Docker", "testing", "CI/CD", "environment setup", "debugging", "deployment"],
-      "knowledge_dir": "./devops",
+      "knowledge_dir": "./knowledge",
       "skills": ["coding-plan"],
       "sample_requests": [
         {"category": "Environment", "title": "Reproducible dev setup", "request": "Set up a reproducible local dev environment for [Project: repo name or path] — pin versions, write the Dockerfile, document the one-command bootstrap."},

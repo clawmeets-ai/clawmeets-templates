@@ -1,16 +1,14 @@
 # Information Team
 
-Single-agent crawler that watches user-defined websites on a schedule and lands matched items in a local (network-shareable) data warehouse, addressable conversationally for ad-hoc lookup.
+Single-agent crawler that watches user-defined websites on a schedule and keeps matched items in its own local store, addressable conversationally for ad-hoc lookup.
 
 ## The Team
 
-| Agent | What it does | Storage owned |
-|-------|--------------|---------------|
-| `@website_monitor` *(website-monitor skill)* | Crawls each configured rule's entry URLs on the trigger marker via Claude Code's built-in WebFetch (falls through to `playwright-browser` for JS-rendered / login-walled sites); extracts items matching a free-text `content_of_interest` description into a fixed schema. Also responds conversationally to DMs — ad-hoc WebFetch, sample the warehouse, design a new rule. | `dwh_dir/sources/website/<rule>/<TIMESTAMP>/data.tsv` + `dwh_dir/merged/website/<rule>.tsv` (deduped) |
+| Agent | What it does | Storage |
+|-------|--------------|---------|
+| `@website_monitor` | Runs the owner's crawl SOPs via Claude Code's built-in WebFetch (falls through to `playwright-browser` for JS-rendered / login-walled sites); keeps items matching each SOP's free-text content of interest. Also responds conversationally to DMs — ad-hoc WebFetch, look up what it has collected, help draft a new crawl SOP. | Its own store per SOP (the SOP names the location, dedup key and incremental-fetch method) |
 
-Output schema is fixed: `content_hash, title, summary, source_url, first_seen_at, crawled_at` — `first_seen_at` is set on insert only, so downstream consumers can detect newly-discovered items.
-
-Starter rules ship for `nyc-culture`, `ai-news`, `burgundy-wines`, `nyc-restaurants` — URLs are blank placeholders; the operator fills them post-init.
+Every stored item carries at least `title`, `summary`, `source_url` and a first-seen date (set on insert only), so downstream consumers can detect newly-discovered items.
 
 ## Install
 
@@ -21,17 +19,11 @@ clawmeets start
 
 ## Manual setup steps (after `clawmeets init`)
 
-### 1. Set the Data Warehouse Directory
+### 1. Write a crawl SOP per site
 
-In **Agent Settings → Runner Settings → Data Warehouse Directory** (or via CLI: `clawmeets agent set-dwh-dir website_monitor /mnt/dwh`).
+A crawl SOP is a stored, reusable procedure in your **My Desk → SOP library**, addressed to `@website_monitor`. DM the agent **Draft a new crawl SOP** with the site and what you want watched; it proposes the entry URL(s), cadence, storage, dedup key and page/item caps, and saves the SOP to your library once you approve.
 
-### 2. Configure the `website-monitor` skill
-
-Open **Agent Settings → Skills → website-monitor → Configure pill**. The starter `rules[]` array ships with placeholder URLs and JSONC comments suggesting concrete candidates per rule (e.g. Eater for `nyc-restaurants`, Hacker News + Verge for `ai-news`). Replace the placeholders with real sites you actually want to watch.
-
-Per-rule config lives at `$CLAWMEETS_AGENT_DIR/skill-hub/configs/website-monitor.json`. Each rule carries `website + content_of_interest + merge_policy + max_per_run/max_pages` plus the entry URLs to crawl.
-
-### 3. (Optional) Install playwright-browser
+### 2. (Optional) Install playwright-browser
 
 For JS-rendered or login-walled sites WebFetch can't reach:
 
@@ -41,14 +33,6 @@ clawmeets bootstrap browser
 
 One-time per machine. Verifies Node ≥ 20 and installs `playwright`'s Chromium.
 
-### 4. Schedule the syncs
+### 3. Schedule the SOPs
 
-Each rule fires on its own trigger marker `<!-- clawmeets:<rule>-website-monitor-trigger -->`. Example:
-
-```bash
-clawmeets dm schedule <username>-website_monitor \
-  $'<!-- clawmeets:ai-news-website-monitor-trigger -->\nHourly AI-news crawl.' \
-  --cron "0 * * * *" -u <username> -p <password>
-```
-
-Or fire any rule manually from the agent's DM zero-state launchpad.
+Schedule each crawl SOP from My Desk (or ask your assistant to) — events daily, wines weekly, news per your preference. Or run any SOP on demand from the agent's DM launchpad.

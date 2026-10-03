@@ -19,7 +19,7 @@
       "blurb": "Defines the wedge, MVP, and product roadmap",
       "description": "Product owner / champion - defines the wedge, the MVP, and the roadmap; defends the product hypothesis under market and investor pressure; pivots when the evidence demands it",
       "capabilities": ["wedge definition", "MVP scoping", "roadmap calls", "pitch authoring", "pivot judgment", "feature prioritization"],
-      "knowledge_dir": "./product",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Wedge", "title": "One-line wedge", "request": "State the wedge for [Idea: e.g. AI calendar agent for solopreneurs] in ONE line: <who> will pay <how much> for <what> instead of <status quo>."},
         {"category": "Wedge", "title": "Sharper, not wider", "request": "[Wedge: paste current wedge sentence] feels too broad. Cut it to a sharper wedge for a smaller ICP — name what we explicitly stop selling."},
@@ -36,7 +36,7 @@
       "blurb": "Voice of the buyer; pressure-tests every hypothesis",
       "description": "Voice of the buyer - pressure-tests product hypotheses from the ICP's seat; calls out wishful thinking, demands evidence, names what would actually make a real customer pull this off the shelf",
       "capabilities": ["ICP voice", "willingness-to-pay reality check", "objection surfacing", "buyer-language fit", "competitive alternatives", "signal vs. noise"],
-      "knowledge_dir": "./market",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Pressure-test", "title": "Pressure-test [hypothesis]", "request": "Pressure-test [Hypothesis: paste one-line hypothesis] from a real buyer's seat — urgency, frequency, willingness to pay, status-quo workaround, switching cost. Name the weakest axis."},
         {"category": "Pressure-test", "title": "What's the workaround", "request": "For [Product idea: paste], name the messy real-world workaround my ICP already uses. If it works \"well enough\", say so."},
@@ -53,7 +53,7 @@
       "blurb": "Reads the pitch like a Series A check-writer",
       "description": "Critical investor - reads the pitch the way a seed/Series A check-writer would; surfaces defensibility holes, TAM credibility issues, capital efficiency, and exit path; is fine saying no",
       "capabilities": ["pitch critique", "defensibility analysis", "TAM credibility", "traction story scrutiny", "valuation logic", "risk surfacing", "pivot calls"],
-      "knowledge_dir": "./investor",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Critique", "title": "Tear down [pitch v1]", "request": "Tear down [Pitch: paste pitch v1] as a [Stage: seed] check-writer. Cite the specific lines that almost made you stop reading. Say pass or proceed at the end."},
         {"category": "Critique", "title": "Defensibility check", "request": "What stops an incumbent (or a faster startup) from shipping [Wedge: paste] in 6 months? If the answer is \"nothing meaningful\", say so."},
@@ -70,7 +70,7 @@
       "blurb": "Owns mission, tagline, and launch narrative",
       "description": "Brand and launch narrative owner - turns a validated product into mission/vision/tagline/value prop and an Amazon-style working-backwards announcement email that has to be compelling before any code is written",
       "capabilities": ["mission/vision authoring", "tagline + positioning", "value prop articulation", "working-backwards press release", "launch announcement email", "narrative compression"],
-      "knowledge_dir": "./branding",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Brand", "title": "Mission + vision draft", "request": "Given [Validated wedge: paste from PMF outcome], draft mission (what we do, today) and vision (what we change, in 5 years) — each one sentence, no jargon."},
         {"category": "Brand", "title": "Tagline gauntlet", "request": "Tagline candidates for [Product: paste wedge]. Write 5 versions, then kill 4. The survivor mirrors the buyer's literal language from the knowledge folder."},

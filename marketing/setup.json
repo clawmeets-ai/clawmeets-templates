@@ -49,7 +49,7 @@
         "milestone definition",
         "content idea grading"
       ],
-      "knowledge_dir": "./marketing_strategist",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "ROI",
@@ -108,7 +108,7 @@
         "creative briefs",
         "content ideation"
       ],
-      "knowledge_dir": "./creative",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Concepts",
@@ -162,7 +162,7 @@
         "creator collabs",
         "image generation from idea brief"
       ],
-      "knowledge_dir": "./instagram",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Reels",
@@ -216,7 +216,7 @@
         "backlink strategy",
         "content gap analysis"
       ],
-      "knowledge_dir": "./seo",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Research",
@@ -266,7 +266,7 @@
         "channel strategy",
         "shorts strategy"
       ],
-      "knowledge_dir": "./youtube",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Strategy",
@@ -311,7 +311,7 @@
         "creator-first style",
         "comment-section engagement"
       ],
-      "knowledge_dir": "./tiktok",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Hooks",
@@ -356,7 +356,7 @@
         "sponsorship evaluation",
         "webinar production"
       ],
-      "knowledge_dir": "./events",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Strategy",
@@ -406,7 +406,7 @@
         "attribution tracking",
         "vendor management"
       ],
-      "knowledge_dir": "./direct_mail",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Strategy",
@@ -457,7 +457,7 @@
         "transactional copy",
         "email drafting from idea brief"
       ],
-      "knowledge_dir": "./email",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Lifecycle",
@@ -515,7 +515,7 @@
         "crisis comms",
         "spokesperson prep"
       ],
-      "knowledge_dir": "./pr",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Pitching",
@@ -566,7 +566,7 @@
         "guest posting",
         "blog drafting from idea brief"
       ],
-      "knowledge_dir": "./blog",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
           "category": "Calendar",

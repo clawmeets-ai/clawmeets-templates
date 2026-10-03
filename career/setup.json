@@ -18,7 +18,7 @@
       "blurb": "Coaches your job search end-to-end",
       "description": "Career Coach - tailors your resume to each role, sharpens your story arc, plans your application strategy, and coaches you through compensation negotiation",
       "capabilities": ["resume tailoring", "ATS optimization", "career narrative", "pivot framing", "application strategy", "compensation benchmarking", "negotiation prep"],
-      "knowledge_dir": "./career_coach",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Resume", "title": "Tailor my resume to a JD", "request": "Rewrite my **attached resume** bullets to mirror [JD: paste the job description here]'s language and seniority signals; quantify impact and cut weak lines."},
         {"category": "Resume", "title": "ATS pass on my resume", "request": "Score my **attached resume** for keyword coverage and ATS-friendliness against [JD: paste the job description here]; tell me what to add and what to drop."},
@@ -35,7 +35,7 @@
       "blurb": "Researches companies, teams, and hiring managers",
       "description": "Job-Search Researcher - deep-dives companies, teams, hiring managers, and comp data so every conversation is informed",
       "capabilities": ["company research", "team intelligence", "people research", "salary benchmarking", "industry trends", "competitive landscape", "interviewer profiling"],
-      "knowledge_dir": "./researcher",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Company brief", "title": "One-page company brief", "request": "Build a one-pager on [Company: Stripe]: recent news, funding, leadership, product roadmap signals, and any culture flags."},
         {"category": "Company brief", "title": "Why-now story for this role", "request": "Find the strategic reason [Role: Senior PM] at [Company: Stripe] exists right now — recent launches, layoffs, hiring waves, or org shifts."},
@@ -52,7 +52,7 @@
       "blurb": "Runs mock interviews and STAR-format prep",
       "description": "Interview Coach - runs mock interviews, builds STAR-format answers from your real history, and preps role-specific rounds (system design, product sense, case, coding)",
       "capabilities": ["behavioral interview prep", "STAR storytelling", "system design", "product sense", "case interview", "coding interview", "mock interviews", "post-interview debrief"],
-      "knowledge_dir": "./interview_coach",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Mock rounds", "title": "Run a behavioral mock", "request": "Run a 30-min behavioral mock for [Role: Senior PM] at [Level: Senior]; pushback on hedging and score me on structure and specificity."},
         {"category": "Mock rounds", "title": "Mock the full loop", "request": "Run the full interview loop back-to-back for [Role: Senior PM] at [Level: Senior] — behavioral, technical/role-specific, and exec — debrief between rounds."},
@@ -69,7 +69,7 @@
       "blurb": "Drafts cover letters, recruiter messages, and intros",
       "description": "Outreach Writer - drafts cover letters, recruiter and hiring-manager messages, networking intros, and follow-ups that get replies",
       "capabilities": ["cover letters", "recruiter outreach", "LinkedIn DMs", "warm-intro requests", "informational interviews", "follow-up messages", "thank-you notes"],
-      "knowledge_dir": "./outreach_writer",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {"category": "Cover letters", "title": "Cover letter for this JD", "request": "Draft a cover letter for [Role: Senior PM] at [Company: Stripe] using [JD: paste the job description here]: lead with why-this-company, pull 2-3 highlights from my **attached resume** mapped to the JD, and end with a specific next step."},
         {"category": "Cover letters", "title": "Match the company's voice", "request": "Rewrite [Draft: paste your current cover letter here] to match [Company: Stripe]'s tone — formal vs. casual vs. technical — without overcorrecting."},

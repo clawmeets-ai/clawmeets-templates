@@ -51,7 +51,7 @@ Then reference the album by name in your request (e.g. "Build a year-in-review f
 
 ## Seed the assistant's knowledge (recommended)
 
-The memoirist writes better narrative when there's source material beyond pixels. Drop notes, journals, calendar exports, or milestone memos into `~/.clawmeets/agents/{your-username}-assistant/owner/`. The runner auto-indexes those files into `REFERENCES.md` (filename + content preview, refreshed on startup and whenever you change the knowledge dir); the assistant reads that map — and greps the files via `/clawmeets:consult-proprietary-knowledge` — when writing year recaps and milestone reflections.
+The memoirist writes better narrative when there's source material beyond pixels. Drop notes, journals, calendar exports, or milestone memos into `~/.clawmeets/agents/{your-username}-assistant/owner/`. The runner auto-indexes those files into `REFERENCES.md` (filename + content preview, refreshed on startup and whenever you change the knowledge dir); the assistant reads that map — and greps the files directly — when writing year recaps and milestone reflections.
 
 ## Long-running runs
 

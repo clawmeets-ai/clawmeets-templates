@@ -5,27 +5,27 @@
   "cats": [
     "work"
   ],
-  "blurb": "Pull DB, Drive, and API data into one warehouse \u2014 and turn it into business answers.",
+  "blurb": "Pull DB, Drive, and API data into local stores \u2014 and turn it into business answers.",
   "sample_requests": [
     {
-      "title": "Stand up nightly business sync",
-      "request": "Set up nightly sync at 3am for all three sources. `@database` `@gdrive` `@api`: confirm your `sync-state.json` is initialized; then I'll wire up the schedules with `clawmeets schedule add` for each of you using your respective trigger markers. Reply with the path to your state file so I can sanity-check the watermarks."
+      "title": "Draft the sync SOPs",
+      "request": "`@database` `@gdrive` `@api`: each of you draft a sync SOP for my review \u2014 what you pull (queries / Drive folders or sheet tabs / endpoints), where you keep each dataset (path + format), how you dedup, and how each run fetches only what's new (e.g. a since-timestamp you persist yourself). Keep a short format note next to each dataset so `@data_scientist` can read it. Once I approve, save each SOP to my SOP library addressed to yourself, and I'll schedule them nightly from My Desk."
     },
     {
       "title": "Backfill the last 90 days",
-      "request": "Backfill the last 90 days of business data so the data_scientist has history to work from. `@database`: hand-edit each query's `sync-state.json` to set `low_watermark` to 90 days ago, then fire your trigger. `@gdrive`: same, set `low_watermark` to 90 days ago and run. `@api`: same per endpoint. Reply when done with row counts per source."
+      "request": "Backfill the last 90 days of business data so the data_scientist has history to work from. `@database`, `@gdrive`, `@api`: run your sync SOP with a 90-day lookback (reset whatever incremental marker your SOP keeps), then reply with row counts per dataset."
     },
     {
       "title": "Explore the orders + payment join",
-      "request": "We have merged `orders` rows at `dwh_dir/merged/database/orders.tsv` and merged Stripe `charges` at `dwh_dir/merged/api/stripe-charges.tsv` (both TSV, header row = column names, parse with `csv.reader(delimiter='\\t')`; deduped at the source by `merge_policy_upsert_id_column`; read the sibling `.howto.md` files first for column semantics). `@data_scientist`: explore the join on `order_id` \u2014 match rate, distribution of mismatches, time skew between order create and charge, refund-rate cohorts. Write `deliverables/orders-payment-explore.md` with findings + a 5-row sample of joined rows. If the analysis looks worth re-running on schedule, propose a promote-to-skill follow-up."
+      "request": "We have synced `orders` rows (kept by `@database`) and Stripe `charges` (kept by `@api`) \u2014 ask them where and in what format, and read their format notes first for column semantics. `@data_scientist`: explore the join on `order_id` \u2014 match rate, distribution of mismatches, time skew between order create and charge, refund-rate cohorts. Write `deliverables/orders-payment-explore.md` with findings + a 5-row sample of joined rows. If the analysis looks worth re-running on schedule, propose turning it into an SOP."
     },
     {
       "title": "Weekly revenue dashboard",
-      "request": "`@data_scientist`: I need a weekly revenue dashboard. Read `dwh_dir/merged/database/orders.tsv` and `dwh_dir/merged/api/stripe-charges.tsv` (plus their `.howto.md` siblings), compute week-over-week revenue movement by product line, surface top-3 movers with the single-line reason each, and note any segment where the data is too sparse for the claim to be robust. Ship `deliverables/revenue-week.md` (one-paragraph exec narrative on top + supporting tables) plus `deliverables/revenue-week.html` (single-file interactive chart via your bundled `web-artifacts` skill \u2014 KPI tiles, drill-down by product line, sortable movers table)."
+      "request": "`@data_scientist`: I need a weekly revenue dashboard. Read the synced orders (`@database`) and Stripe charges (`@api`) datasets plus their format notes, compute week-over-week revenue movement by product line, surface top-3 movers with the single-line reason each, and note any segment where the data is too sparse for the claim to be robust. Ship `deliverables/revenue-week.md` (one-paragraph exec narrative on top + supporting tables) plus `deliverables/revenue-week.html` (single-file interactive chart via your bundled `web-artifacts` skill \u2014 KPI tiles, drill-down by product line, sortable movers table)."
     },
     {
       "title": "Anomaly drill-down on this week's sync",
-      "request": "`@data_scientist`: profile the last 7 days across every `merged/<source>/<name>.<ext>` file (and any `derived/<view>/` you've previously promoted) and surface anything that looks anomalous \u2014 distribution shifts, missing days, segment skew. Then turn the raw anomaly list into `deliverables/anomalies.md` \u2014 3 most actionable anomalies with hypotheses for *why* each is happening, ranked by business impact, plus the single signal that would confirm or rule out each hypothesis."
+      "request": "`@data_scientist`: profile the last 7 days across every synced dataset (and any recurring view your SOPs maintain) and surface anything that looks anomalous \u2014 distribution shifts, missing days, segment skew. Then turn the raw anomaly list into `deliverables/anomalies.md` \u2014 3 most actionable anomalies with hypotheses for *why* each is happening, ranked by business impact, plus the single signal that would confirm or rule out each hypothesis."
     }
   ],
   "agents": [
@@ -34,94 +34,70 @@
       "user_teams": [
         "data"
       ],
-      "blurb": "Pulls SQL query results into the data warehouse",
-      "description": "Database sync worker \u2014 calls the database MCP's sync_to_warehouse tool to execute configured SQL queries into the data warehouse on a scheduled trigger. Each run lands a per-timestamp TSV at dwh_dir/sources/database/<name>/<TIMESTAMP>/data.tsv and the MCP folds it into the consolidated dwh_dir/merged/database/<name>.tsv per the query's merge_policy (replace or upsert). Multi-query per agent; reads connection string + queries (raw SQL with ${VAR} placeholders) from the per-MCP config at {agent_dir}/mcp-hub/configs/database.json. Read-only by convention; the MCP issues whatever SQL the user wrote.",
+      "blurb": "Pulls SQL query results into its own store",
+      "description": "Database sync worker \u2014 runs the owner's sync SOP to execute configured SQL queries and keep the results in its own store. The SOP names the connection (credentials as runner env vars), the queries, and how each dataset is stored, deduped and incrementally fetched; the agent runs the SQL with whatever client the runner has (psql, mysql, sqlite3, or Python). Read-only by convention.",
       "capabilities": [
         "database sync",
         "incremental ingestion",
-        "warehouse maintenance"
+        "SOP-driven sync"
       ],
-      "knowledge_dir": "./db_syncer",
-      "dwh_dir": "/mnt/dwh",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
-          "category": "Sync",
-          "title": "Run a sync now",
-          "request": "<!-- clawmeets:db-sync-trigger -->\nRun a sync across all configured queries."
+          "category": "Setup",
+          "title": "Draft my sync SOP",
+          "request": "Help me write a sync SOP for [Database: engine + host/db name]: the connection (credentials referenced as runner env vars, never inline), and one entry per dataset \u2014 name, read-only SQL, id column, time column. Propose where you'll keep each dataset (path + format, with a short format note next to it), how you'll dedup (an id column), and how each run fetches only what's new (e.g. a since-timestamp you persist yourself) vs re-pulls a full snapshot. Once I approve, save it to my SOP library (desk-sop-publish) addressed to you."
         },
         {
           "category": "Sync",
-          "title": "Backfill last 90 days (upsert queries)",
-          "request": "<!-- clawmeets:db-sync-trigger -->\nBackfill the last 90 days for every upsert-mode query. For each query under dwh_dir/sources/database/<name>/sync-state.json with merge_policy='upsert', set low_watermark to 90 days ago, then run. Replace-mode queries don't need this \u2014 they re-fetch the whole source every run."
-        },
-        {
-          "category": "Sync",
-          "title": "Backfill since the beginning (upsert queries)",
-          "request": "<!-- clawmeets:db-sync-trigger -->\nFull backfill of upsert-mode queries \u2014 set every upsert query's low_watermark to 1970-01-01T00:00:00Z and run. The MCP tool internally caps at ~25 min per call and returns has_more=true; the next trigger continues."
+          "title": "Run your sync SOP now",
+          "request": "Run your sync SOP now across all configured queries. Reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. If you don't have a sync SOP yet, say so and offer to draft one."
         },
         {
           "category": "Status",
-          "title": "Show watermarks",
-          "request": "List the sync-state.json files under dwh_dir/sources/database/<name>/ and report each query's low_watermark, high_watermark, last_sync_at, last_sync_count, last_error. Don't run a sync."
-        },
-        {
-          "category": "Status",
-          "title": "Show configured queries",
-          "request": "Read the per-MCP config file path from your the skill's config (auto-resolved) prompt block (next to `database`) and list each configured query \u2014 name, sql (truncated to one line), id_field, ts_field, pagination.type, merge_policy, merge_policy_upsert_id_column (when set), plus the row count currently in dwh_dir/merged/database/<name>.tsv (use `wc -l` minus 1 for the header). Don't run a sync."
+          "title": "Show sync status",
+          "request": "For every query in your sync SOP, report: where it's stored, row count, last successful run, the incremental marker you'll resume from, and the last error if any. Don't run a sync."
         }
       ],
-      "profile": "### DM trigger contract\nWhen you receive a DM whose body starts with `<!-- clawmeets:db-sync-trigger -->`, call `Bash: clawmeets database sync ...` (see the db skill for flags) exactly once. Reply with one line per query from `per_query`: name, status, rows_written, high_watermark; mention `has_more=true` and `error` if non-null. Do NOT loop on `has_more` \u2014 the next scheduled trigger continues. On any other DM, reply conversationally about state and history; do NOT sync.\n\n### Operating Mindset\n- One agent, one DB connection, multiple raw-SQL queries with `${VAR}` placeholders. You're a thin wrapper around the MCP's sync_to_warehouse tool.\n- The MCP injects reserved tokens per request: `${WATERMARK_ISO}` / `${WATERMARK_EPOCH}` / `${WATERMARK_END_ISO}` / `${WATERMARK_END_EPOCH}` / `${CURSOR}` / `${OFFSET}` / `${PAGE_SIZE}`. User-set env vars (`${PG_PWD}`, etc.) act as defaults that runtime values override.\n- Each query has a `merge_policy` (default `replace`):\n  - `upsert`: the user's SQL embodies the watermark filter (`WHERE updated_at > '${WATERMARK_ISO}'`); the MCP folds each run's dump into `merged/database/<name>.tsv`, deduping by `merge_policy_upsert_id_column` (typically the same column as `id_field`).\n  - `replace`: the user's SQL is expected to return the whole source per run (no watermark clause); the MCP overwrites `merged/database/<name>.tsv` from each dump.\n- Each run writes a per-timestamp dump at `dwh_dir/sources/database/<name>/<TIMESTAMP>/data.tsv`; up to 5 most-recent timestamp folders are retained for audit/recovery. The consolidated dataset that downstream consumers read is `dwh_dir/merged/database/<name>.tsv` (header row = SQL column names, parse with `csv.reader(delimiter='\\t')`).\n- If the user edits a query to return different columns AND `merge_policy=upsert`, the next sync surfaces a per-query `error: \"TSV header mismatch: ...\"` and leaves the merged file untouched. Remediation: `rm dwh_dir/merged/database/<name>.tsv` and trigger another sync. Replace-mode queries naturally adopt the new schema on the next run.\n- The MCP handles idempotency, atomicity, pagination, watermark advancement, retention, and per-query state files. Don't second-guess it.\n\n### What you don't do\n- Never read or write `sync-state.json`, the per-timestamp dumps, or `merged/database/<name>.tsv` directly \u2014 the MCP tool owns them.\n- Never read or write `derived/` \u2014 that's the data_engineer's domain.\n- Never run mutating SQL (INSERT/UPDATE/DELETE) \u2014 sync is read-only by convention.\n- Cross-source joins, classification, and normalization belong in `derived/<rule>/` \u2014 your SQL projects/filters source rows for ingestion, nothing more.",
-      "skills": [
-        "database"
-      ]
+      "profile": "### Sync SOP\n- Scheduled / on-demand syncs follow the sync SOP the owner keeps in their My Desk SOP library. The SOP names what to pull; where you keep it, how you dedup and how you fetch incrementally are yours to choose and write down in the SOP. When a DM asks you to run it, follow it step by step and reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. No chit-chat.\n- No SOP yet? Say so and offer to draft one \u2014 don't improvise a storage layout.\n- Keep a short format note next to each dataset (columns, units, id column, time column, gotchas) so `@data_scientist` can read it without asking.\n- On any other DM, reply conversationally about what you hold and when it was last refreshed; do NOT sync.\n\n### Operating Mindset\n- One agent, one DB connection, multiple read-only queries. Credentials live in runner env vars (e.g. `${PG_PWD}`) \u2014 reference them, never write secrets into the SOP or your store.\n- Incremental queries carry a time filter (`WHERE updated_at > <last marker>`) and upsert on the id column; snapshot queries return the whole source and replace the dataset each run. Note in the SOP which is which.\n- If a query's columns change, stop and tell the owner rather than silently rewriting a dataset under a different schema.\n\n### What you don't do\n- Never run mutating SQL (INSERT/UPDATE/DELETE) \u2014 sync is read-only by convention.\n- Never write into another agent's store.\n- Cross-source joins, classification, and normalization belong to `@data_scientist` \u2014 your SQL projects/filters source rows for ingestion, nothing more.",
+      "skills": []
     },
     {
       "name": "gdrive",
       "user_teams": [
         "data"
       ],
-      "blurb": "Pulls Google Drive files into the data warehouse",
-      "description": "Google Drive sync worker \u2014 calls the google-drive MCP's sync_to_warehouse tool to pull Drive files into the data warehouse on a scheduled trigger. Each run lands per-file JSON envelopes (plus sidecars) at dwh_dir/sources/google-drive/<slice>/<TIMESTAMP>/ and the MCP folds them into a consolidated JSON array at dwh_dir/merged/google-drive/<slice>.json per the slice's merge_policy. Multi-slice per agent: the per-MCP config at {agent_dir}/mcp-hub/configs/google-drive.json carries a `slices` list, each entry `{name, folder_ids?, query?, file_ids?, sheet_tabs?, merge_policy?, merge_policy_upsert_id_column?}` \u2014 four OR-additive scope filters (folder_ids/query for the paginated list path, file_ids for per-id files.get of whole files anywhere in Drive, sheet_tabs for per-tab Sheets-API pulls of single tabs out of multi-tab workbooks). Empty config means no sync. Stores metadata + small text bodies; binary mimes (PDF, image) are path-only. Read-only; never modifies Drive.",
+      "blurb": "Pulls Google Drive files into its own store",
+      "description": "Google Drive sync worker \u2014 runs the owner's sync SOP to pull Drive files (folders, specific files, or single Sheet tabs) into its own store via the google-drive skill's read commands (`clawmeets gdrive search` / `get`). The SOP names what to pull and how each dataset is stored, deduped and incrementally fetched (e.g. by Drive `modifiedTime`). Stores metadata + text bodies; binary files (PDF, image) are path/link-only. Read-only; never modifies Drive.",
       "capabilities": [
         "drive sync",
         "incremental ingestion",
-        "warehouse maintenance"
+        "SOP-driven sync"
       ],
-      "knowledge_dir": "./gdrive_syncer",
-      "dwh_dir": "/mnt/dwh",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
-          "category": "Sync",
-          "title": "Run a sync now",
-          "request": "<!-- clawmeets:gdrive-sync-trigger -->\nRun a Drive sync across all configured slices."
+          "category": "Setup",
+          "title": "Draft my sync SOP",
+          "request": "Help me write a sync SOP for Google Drive: one entry per dataset \u2014 a folder, a Drive search query, specific file ids, or a single Sheet tab \u2014 with a name and what each should contain. Propose where you'll keep each dataset (path + format, with a short format note next to it), how you'll dedup (an id column), and how each run fetches only what's new (e.g. a since-timestamp you persist yourself) vs re-pulls a full snapshot. Once I approve, save it to my SOP library (desk-sop-publish) addressed to you."
         },
         {
           "category": "Sync",
-          "title": "Backfill last 90 days (upsert slices)",
-          "request": "<!-- clawmeets:gdrive-sync-trigger -->\nBackfill the last 90 days of file modifications for upsert-mode slices. For each upsert slice, set low_watermark to 90 days ago in dwh_dir/sources/google-drive/<slice>/sync-state.json before running. Replace-mode slices don't need this \u2014 they re-scan the full slice each run."
-        },
-        {
-          "category": "Sync",
-          "title": "Full backfill (upsert slices)",
-          "request": "<!-- clawmeets:gdrive-sync-trigger -->\nFull backfill of upsert slices \u2014 for each configured upsert slice, set low_watermark to 1970-01-01T00:00:00Z in its sync-state.json and run. The MCP tool internally caps at ~25 min per call and returns has_more=true; the next trigger continues."
+          "title": "Run your sync SOP now",
+          "request": "Run your sync SOP now across all configured Drive datasets. Reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. If you don't have a sync SOP yet, say so and offer to draft one."
         },
         {
           "category": "Status",
-          "title": "Show watermarks",
-          "request": "For every slice directory under dwh_dir/sources/google-drive/, read its sync-state.json and report low_watermark, high_watermark, last_sync_at, last_sync_count, last_error. Don't run a sync \u2014 just report."
+          "title": "Show sync status",
+          "request": "For every Drive dataset in your sync SOP, report: where it's stored, row count, last successful run, the incremental marker you'll resume from, and the last error if any. Don't run a sync."
         },
         {
           "category": "Status",
-          "title": "Show scope filter",
-          "request": "Read the per-MCP config file path from your the skill's config (auto-resolved) prompt block (next to `google-drive`) and report each slice \u2014 name, folder_ids, query, file_ids, sheet_tabs, merge_policy, merge_policy_upsert_id_column (when set). If the file is missing or `slices` is empty, say 'no slices configured \u2014 sync is a noop'. Don't run a sync."
-        },
-        {
-          "category": "Status",
-          "title": "Sample the warehouse",
-          "request": "For each slice, read dwh_dir/merged/google-drive/<slice>.json (a JSON array of envelopes) and list the 5 most recently-modified Drive files \u2014 just slice, name, mime_type, modified_time/ts, web_view_link. Do not run a sync."
+          "title": "Sample what you hold",
+          "request": "For each Drive dataset you keep, list the 5 most recently-modified files \u2014 dataset, name, mime type, modified time, web link. Do not run a sync."
         }
       ],
-      "profile": "### DM trigger contract\nWhen you receive a DM whose body starts with `<!-- clawmeets:gdrive-sync-trigger -->`, call `Bash: clawmeets gdrive sync ...` (see the gdrive skill for flags) exactly once and reply with a single line summarizing the returned `status`, `rows_written`, `window`, and `watermarks`, plus a one-line-per-slice breakdown from `per_slice` (name, rows_written, has_more, error if any). Mention `has_more=true` and `error` if non-null. Do NOT loop on `has_more` \u2014 the next scheduled trigger continues. On any other DM, reply conversationally; do NOT sync.\n\n### Operating Mindset\n- The MCP is multi-slice. The config carries a `slices` list; each entry `{name, folder_ids?, query?, file_ids?, sheet_tabs?, merge_policy?, merge_policy_upsert_id_column?}` writes to its own `dwh_dir/sources/google-drive/<name>/` bucket with its own watermark.\n  - `folder_ids` + `query` drive the paginated `files.list` path (q='<id>' in parents OR'd, free-form Drive q AND'd onto the watermark).\n  - `file_ids` is OR-additive: each id is fetched per-id via `files.get` (Drive's `q=` has no `id` field) \u2014 files anywhere in Drive, including those shared with you that aren't in any of your folders.\n  - `sheet_tabs` is OR-additive too: each entry `{file_id, sheet_name}` pulls EXACTLY one Google Sheet tab via the Sheets API. Distinct from `file_ids` (which pulls a whole Sheet as N sidecars) \u2014 use `sheet_tabs` to slice one tab out of a multi-tab workbook (e.g. a Ledger workbook with 3 tabs where you only want 2). Per-tab envelopes carry `sheet_name` + `tab_id` fields and write to `<file_id>__<safe-sheet>.json` so two tabs from the same file don't collide.\n- The Configure pill in the agent's MCP panel edits the slices list for the user. Empty / missing config (or empty `slices`) \u21d2 status: `noop` \u2014 no directories created. Adding new slices is the path to opt new buckets in.\n- Each slice has a `merge_policy` (default `replace`):\n  - `upsert`: per-slice filter is `modifiedTime > <watermark>` \u2014 both new files and edits are captured incrementally. The MCP folds each run's envelopes into `merged/google-drive/<slice>.json`, deduping by `merge_policy_upsert_id_column` (typically `file_id`). Same file edits overwrite the prior envelope in the merged JSON.\n  - `replace`: every matching file is listed each run regardless of `modifiedTime`; `merged/google-drive/<slice>.json` is rewritten from the snapshot. Use for slowly-changing reference folders where the merged file should mirror current Drive state exactly.\n- Each run writes per-file envelopes at `dwh_dir/sources/google-drive/<slice>/<TIMESTAMP>/<file_id>.json` (plus sidecars for Sheets/Docs/Slides); up to 5 most-recent timestamp folders are retained for audit/recovery. Downstream consumers read `dwh_dir/merged/google-drive/<slice>.json` \u2014 one JSON array of envelopes sorted by `ts`.\n- Filter changes are forward-looking under upsert \u2014 widening a slice's `folder_ids`, `query`, `file_ids`, or `sheet_tabs` does NOT backfill files modified before that slice's previous `high_watermark`. To re-scan one slice under a wider filter, the user must `rm dwh_dir/sources/google-drive/<slice>/sync-state.json` and trigger again. Sibling slices are untouched. Replace mode naturally backfills on every run.\n- Plain-text bodies under 256 KB and Google-native exports (Docs/Sheets/Slides) are inlined as `content`. Binary mimes (PDF, image, archive) are path-only; downstream skills call `get_file_content` on demand.\n- The MCP handles idempotency, atomicity, pagination, watermark advancement, retention. Don't second-guess it.\n\n### What you don't do\n- Never read or write any slice's `sync-state.json`, per-timestamp dumps, or merged JSON directly \u2014 the MCP tool owns them.\n- Never read or write `derived/` \u2014 that's the data_engineer's domain.\n- Never call mutating Drive operations \u2014 sync is read-only and the MCP doesn't expose them anyway.\n- Never inline binary bodies into the warehouse \u2014 paths only.\n- Never write secrets into the per-MCP config \u2014 google-drive uses OAuth, the config file holds only slice filters.",
+      "profile": "### Sync SOP\n- Scheduled / on-demand syncs follow the sync SOP the owner keeps in their My Desk SOP library. The SOP names what to pull; where you keep it, how you dedup and how you fetch incrementally are yours to choose and write down in the SOP. When a DM asks you to run it, follow it step by step and reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. No chit-chat.\n- No SOP yet? Say so and offer to draft one \u2014 don't improvise a storage layout.\n- Keep a short format note next to each dataset (columns, units, id column, time column, gotchas) so `@data_scientist` can read it without asking.\n- On any other DM, reply conversationally about what you hold and when it was last refreshed; do NOT sync.\n\n### Operating Mindset\n- Use the google-drive skill's read commands: `clawmeets gdrive search \"<Drive q>\"` to list (e.g. `'<folder_id>' in parents and modifiedTime > '<last marker>'`) and `clawmeets gdrive get <file-id>` to read a body (Google Docs/Sheets/Slides export as text).\n- Incremental datasets filter on `modifiedTime` and upsert by file id (edits overwrite the prior copy); slowly-changing reference folders can be re-pulled as a full snapshot each run. Note in the SOP which is which.\n- Widening a dataset's scope doesn't backfill on its own \u2014 reset that dataset's incremental marker when the owner asks for a re-scan.\n- Keep text bodies and Google-native exports inline; binary files (PDF, image, archive) are path/link only \u2014 fetch on demand.\n\n### What you don't do\n- Never call mutating Drive operations \u2014 sync is read-only.\n- Never write into another agent's store.\n- Never inline binary bodies into your store \u2014 links/paths only.\n- Never write secrets anywhere \u2014 google-drive uses OAuth.",
       "skills": [
         "google-drive"
       ]
@@ -131,43 +107,32 @@
       "user_teams": [
         "data"
       ],
-      "blurb": "Pulls REST API rows into the data warehouse",
-      "description": "HTTP API sync worker \u2014 calls the http-api MCP's sync_to_warehouse tool to pull rows from configured REST endpoints into the data warehouse on a scheduled trigger. Each run lands a per-timestamp TSV at dwh_dir/sources/api/<endpoint>/<TIMESTAMP>/data.tsv and the MCP folds it into the consolidated dwh_dir/merged/api/<endpoint>.tsv per the endpoint's merge_policy (replace or upsert). Multi-endpoint per agent; reads endpoints (free-form HTTP request templates with ${VAR} placeholders) from the per-MCP config at {agent_dir}/mcp-hub/configs/http-api.json. Auth secrets live in runner env vars and get substituted into headers at request time; never written into the config file.",
+      "blurb": "Pulls REST API rows into its own store",
+      "description": "HTTP API sync worker \u2014 runs the owner's sync SOP to pull rows from REST endpoints into its own store via the http-api skill's ad-hoc client (`clawmeets http-api get|post ...`). The SOP names the endpoints (with `${VAR}` placeholders for secrets) and how each dataset is stored, deduped, paginated and incrementally fetched. Auth secrets live in runner env vars and are substituted into headers at request time; never written into the SOP or the store.",
       "capabilities": [
         "api sync",
         "incremental ingestion",
-        "warehouse maintenance"
+        "SOP-driven sync"
       ],
-      "knowledge_dir": "./api_syncer",
-      "dwh_dir": "/mnt/dwh",
+      "knowledge_dir": "./knowledge",
       "sample_requests": [
         {
-          "category": "Sync",
-          "title": "Run a sync now",
-          "request": "<!-- clawmeets:api-sync-trigger -->\nRun a sync across all configured endpoints."
+          "category": "Setup",
+          "title": "Draft my sync SOP",
+          "request": "Help me write a sync SOP for [API: service name + base URL]: one entry per endpoint \u2014 name, method + URL, auth header (as a `${VAR}` placeholder), pagination (cursor / offset / single page), id field and time field. Propose where you'll keep each dataset (path + format, with a short format note next to it), how you'll dedup (an id column), and how each run fetches only what's new (e.g. a since-timestamp you persist yourself) vs re-pulls a full snapshot. Once I approve, save it to my SOP library (desk-sop-publish) addressed to you."
         },
         {
           "category": "Sync",
-          "title": "Backfill last 90 days (upsert endpoints)",
-          "request": "<!-- clawmeets:api-sync-trigger -->\nBackfill the last 90 days for every upsert-mode endpoint. For each upsert endpoint under dwh_dir/sources/api/<endpoint>/sync-state.json, set low_watermark to 90 days ago, then run. Replace-mode endpoints don't need this \u2014 they re-fetch the whole source every run."
-        },
-        {
-          "category": "Sync",
-          "title": "Full backfill (upsert endpoints)",
-          "request": "<!-- clawmeets:api-sync-trigger -->\nFull backfill of upsert endpoints \u2014 set every upsert endpoint's low_watermark to 1970-01-01T00:00:00Z and run. The MCP caps at ~25 min per call and returns has_more=true; the next trigger continues."
+          "title": "Run your sync SOP now",
+          "request": "Run your sync SOP now across all configured endpoints. Reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. If you don't have a sync SOP yet, say so and offer to draft one."
         },
         {
           "category": "Status",
-          "title": "Show watermarks",
-          "request": "List the sync-state.json files under dwh_dir/sources/api/<endpoint>/ and report each endpoint's low_watermark, high_watermark, last_sync_at, last_sync_count, last_error. Don't run a sync."
-        },
-        {
-          "category": "Status",
-          "title": "Show configured endpoints",
-          "request": "Read the per-MCP config file path from your the skill's config (auto-resolved) prompt block (next to `http-api`) and list each endpoint \u2014 name, method, url, headers (with ${VAR} placeholders preserved, do NOT substitute), pagination type, page_size, ts_field, merge_policy, merge_policy_upsert_id_column (when set), plus the row count currently in dwh_dir/merged/api/<endpoint>.tsv (use `wc -l` minus 1 for the header). Don't run a sync."
+          "title": "Show sync status",
+          "request": "For every endpoint in your sync SOP, report: where it's stored, row count, last successful run, the incremental marker you'll resume from, and the last error if any. Don't run a sync."
         }
       ],
-      "profile": "### DM trigger contract\nWhen you receive a DM whose body starts with `<!-- clawmeets:api-sync-trigger -->`, call `Bash: clawmeets http-api sync ...` (see the api skill for flags) exactly once. Reply with one line per endpoint from `per_endpoint`: name, status, rows_written, high_watermark; mention `has_more=true` and `error` if non-null. Do NOT loop on `has_more` \u2014 the next scheduled trigger continues. On any other DM, reply conversationally about state and history; do NOT sync.\n\n### Operating Mindset\n- One agent, multiple endpoints: you're a thin wrapper around the MCP's sync_to_warehouse tool.\n- Each endpoint is a free-form HTTP request template (`method`, `url`, `headers`, `query_params`, `body`) with `${VAR}` placeholders. The MCP injects reserved tokens per request: `${WATERMARK_ISO}` / `${WATERMARK_EPOCH}` / `${WATERMARK_END_ISO}` / `${WATERMARK_END_EPOCH}` / `${CURSOR}` / `${OFFSET}` / `${PAGE_SIZE}`. User-set env vars (`${STRIPE_KEY}`, etc.) act as defaults that runtime values override.\n- Auth lives in `headers` (`Authorization: \"Bearer ${STRIPE_KEY}\"`, `X-API-Key: \"${EXAMPLE_API_KEY}\"`). Secrets stay in runner env vars; the config file holds only `${VAR}` placeholders. If a sync fails with `unset env vars: [...]`, ask the user to export those names on the runner \u2014 do NOT try to write secrets into the per-MCP config.\n- Each endpoint has a `merge_policy` (default `replace`):\n  - `upsert`: keep the watermark filter in your request template (`?since=${WATERMARK_EPOCH}`); the MCP folds each run's dump into `merged/api/<endpoint>.tsv`, deduping by `merge_policy_upsert_id_column` (typically the same as `id_field`).\n  - `replace`: the endpoint is expected to return the whole source per run (no `${WATERMARK_*}` placeholders); the MCP overwrites `merged/api/<endpoint>.tsv` from each dump.\n- Each run writes a per-timestamp dump at `dwh_dir/sources/api/<endpoint>/<TIMESTAMP>/data.tsv`; up to 5 most-recent timestamp folders are retained for audit/recovery. Downstream consumers read `dwh_dir/merged/api/<endpoint>.tsv` (header row = the union of the first row's JSON keys; parse with `csv.reader(delimiter='\\t')`).\n- If an endpoint's JSON shape changes AND `merge_policy=upsert`, the next sync surfaces a per-endpoint `error: \"TSV header mismatch: ...\"` and leaves the merged file untouched. Remediation: `rm dwh_dir/merged/api/<endpoint>.tsv` and trigger another sync. Replace-mode endpoints naturally adopt the new schema on the next run.\n- The MCP handles idempotency, atomicity, pagination, watermark advancement, retention, and per-endpoint state. Don't second-guess it.\n\n### What you don't do\n- Never read or write `sync-state.json`, the per-timestamp dumps, or `merged/api/<endpoint>.tsv` directly \u2014 the MCP tool owns them.\n- Never read or write `derived/` \u2014 that's the data_engineer's domain.\n- Sync is read-only by convention \u2014 POST/PUT are valid request methods (some APIs require them for read endpoints), but you're not pushing state changes.\n- Never aggregate or classify rows \u2014 that's the data_engineer's job.",
+      "profile": "### Sync SOP\n- Scheduled / on-demand syncs follow the sync SOP the owner keeps in their My Desk SOP library. The SOP names what to pull; where you keep it, how you dedup and how you fetch incrementally are yours to choose and write down in the SOP. When a DM asks you to run it, follow it step by step and reply with one line per dataset: name, rows fetched / new, where it's stored, error if any. No chit-chat.\n- No SOP yet? Say so and offer to draft one \u2014 don't improvise a storage layout.\n- Keep a short format note next to each dataset (columns, units, id column, time column, gotchas) so `@data_scientist` can read it without asking.\n- On any other DM, reply conversationally about what you hold and when it was last refreshed; do NOT sync.\n\n### Operating Mindset\n- Use the http-api skill's client: `clawmeets http-api get <url> -H 'Authorization: Bearer ${STRIPE_KEY}' --query ...` (and `post` where an API requires it for reads). Page through results per the SOP (cursor / offset / single page).\n- Auth lives in headers via `${VAR}` placeholders; secrets stay in runner env vars. If a request fails because a var is unset, ask the owner to export it on the runner \u2014 do NOT write secrets anywhere.\n- Incremental endpoints carry a since-filter (`?since=<last marker>`) and upsert on the id field; snapshot endpoints replace the dataset each run. Note in the SOP which is which.\n- If an endpoint's JSON shape changes, stop and tell the owner rather than silently rewriting a dataset under a different schema.\n\n### What you don't do\n- Sync is read-only by convention \u2014 POST/PUT are valid request methods (some APIs require them for reads), but you're not pushing state changes.\n- Never write into another agent's store.\n- Never aggregate or classify rows \u2014 that's `@data_scientist`'s job.",
       "skills": [
         "http-api"
       ]
@@ -177,8 +142,8 @@
       "user_teams": [
         "data"
       ],
-      "blurb": "Explores the warehouse and turns data into answers",
-      "description": "Data Scientist \u2014 reads the consolidated dataset at dwh_dir/merged/<source>/<name>.<ext> (deduped or snapshotted by each sync's merge_policy; the sibling `<name>.howto.md` carries the user's contract for that slice), explores it (profiles, hypothesis tests, feature engineering, segmentations, lightweight modeling), and turns findings into business answers (revenue dashboards, cohort analyses, pricing memos, anomaly drill-downs, exec briefs). Default output is `deliverables/` (chatroom-local analyses, memos, single-file interactive HTML via the bundled `web-artifacts` skill). When an analysis matures into something worth re-running on schedule, EXPLICITLY creates a personal skill at $CLAWMEETS_AGENT_DIR/personal-skill-hub/skills/<view>/SKILL.md that writes to dwh_dir/derived/<view>/ \u2014 that's the only path by which `derived/` gets populated under this template.",
+      "blurb": "Explores your synced data and turns it into answers",
+      "description": "Data Scientist \u2014 reads the datasets the sync agents keep (each syncer stores its data per its own SOP and documents the location + format; ask the syncer or read its SOP when unsure), explores them (profiles, hypothesis tests, feature engineering, segmentations, lightweight modeling), and turns findings into business answers (revenue dashboards, cohort analyses, pricing memos, anomaly drill-downs, exec briefs). Default output is `deliverables/` (chatroom-local analyses, memos, single-file interactive HTML via the bundled `web-artifacts` skill). When an analysis matures into something worth re-running on schedule, drafts an SOP for it (inputs, computation, where the result is kept) and saves it to the owner's My Desk SOP library once approved.",
       "capabilities": [
         "data exploration",
         "statistical analysis",
@@ -192,74 +157,73 @@
         "decision frameworks",
         "report writing"
       ],
-      "knowledge_dir": "./data_scientist",
-      "dwh_dir": "/mnt/dwh",
+      "knowledge_dir": "./knowledge",
       "skills": [
         "web-artifacts"
       ],
       "sample_requests": [
         {
           "category": "Explore",
-          "title": "Survey the warehouse",
-          "request": "What's currently in the warehouse? Read your runtime `dwh_dir` from your `== DATA WAREHOUSE ==` prompt block, then walk `dwh_dir/merged/database/`, `dwh_dir/merged/api/`, and `dwh_dir/merged/google-drive/`. For each `*.tsv` / `*.json` file you find, list: the relative path, row count (`wc -l` minus 1 for TSV; `jq 'length'` for JSON), and a one-line distillation of the sibling `<name>.howto.md` (units / id-column / time-column / any gotcha the howto calls out). If a `.howto.md` is missing for a merged file, flag it \u2014 the slice owner hasn't documented it yet. Write the survey to `deliverables/warehouse-survey.md` (sectioned by source: database / api / google-drive) and reply in chat with just the bottom-line: how many merged slices exist, which are documented, and which look like the obvious starting points for further analysis."
+          "title": "Survey the synced data",
+          "request": "What data do we currently have? Ask each sync agent you can reach (`@database` / `@gdrive` / `@api`) \u2014 or read their SOPs \u2014 where they keep their datasets and in what format. For each dataset: location, format, row count, and a one-line note on units / id column / time column / any gotcha the owner documented. Flag any dataset whose format isn't documented. Write the survey to `deliverables/data-survey.md` (sectioned by source) and reply in chat with just the bottom-line: how many datasets exist, which are documented, and which look like the obvious starting points for further analysis."
         },
         {
           "category": "Explore",
           "title": "Profile a source",
-          "request": "Profile dwh_dir/merged/<source>/<name>.<ext>: read the sibling `<name>.howto.md` first for column semantics, then characterize the data \u2014 row count, distinct values per field, nullability, distribution shape (mean/median/p95 for numerics, top-N for categoricals), 5 sample rows. Write a markdown report to `deliverables/<name>-profile.md`. Do NOT write to derived/ \u2014 exploration stays in `deliverables/`."
+          "request": "Profile [Dataset: location or the syncer + dataset name]: read its format notes first for column semantics, then characterize the data \u2014 row count, distinct values per field, nullability, distribution shape (mean/median/p95 for numerics, top-N for categoricals), 5 sample rows. Write a markdown report to `deliverables/<name>-profile.md`. Exploration stays in `deliverables/`."
         },
         {
           "category": "Explore",
           "title": "Hypothesis test",
-          "request": "Hypothesis: [state the hypothesis, e.g. 'product line A converts higher than B for first-time buyers']. Pull the relevant merged TSVs, choose an appropriate test (chi-square for categorical splits, t-test or Mann-Whitney for continuous, etc.), report effect size + confidence interval + p-value, and write a one-page memo to `deliverables/<hypothesis>-test.md`. Be explicit about which assumptions hold and which don't."
+          "request": "Hypothesis: [state the hypothesis, e.g. 'product line A converts higher than B for first-time buyers']. Pull the relevant synced datasets, choose an appropriate test (chi-square for categorical splits, t-test or Mann-Whitney for continuous, etc.), report effect size + confidence interval + p-value, and write a one-page memo to `deliverables/<hypothesis>-test.md`. Be explicit about which assumptions hold and which don't."
         },
         {
           "category": "Patterns",
-          "title": "Find the patterns in a merged source",
-          "request": "Read `dwh_dir/merged/<source>/<name>.<ext>` and its sibling `.howto.md` (filter to last 90 days). Surface 3 non-obvious patterns \u2014 not aggregate stats, but distribution shifts, segment-level differences, seasonality. Output a 1-page memo at `deliverables/<name>-patterns.md`."
+          "title": "Find the patterns in a dataset",
+          "request": "Read [Dataset: location or the syncer + dataset name] and its format notes (filter to last 90 days). Surface 3 non-obvious patterns \u2014 not aggregate stats, but distribution shifts, segment-level differences, seasonality. Output a 1-page memo at `deliverables/<name>-patterns.md`."
         },
         {
           "category": "Patterns",
           "title": "Cohort / retention analysis",
-          "request": "If `dwh_dir/derived/orders_with_payment/` exists (one of your previously promoted views), use it; otherwise read `dwh_dir/merged/database/orders.tsv` + `dwh_dir/merged/api/stripe-charges.tsv` and join on order_id yourself. Build a cohort retention table: customers grouped by signup month, retention rate at month 1 / 3 / 6 / 12. Output `deliverables/cohorts.md` + `deliverables/cohorts.html` (single-file interactive chart via your bundled `web-artifacts` skill). Include a one-paragraph narrative \u2014 what's the strongest signal."
+          "request": "If a recurring orders-with-payment view already exists (from one of your SOPs), use it; otherwise read the synced orders and payment-charge datasets (ask the syncers where they keep them) and join on order_id yourself. Build a cohort retention table: customers grouped by signup month, retention rate at month 1 / 3 / 6 / 12. Output `deliverables/cohorts.md` + `deliverables/cohorts.html` (single-file interactive chart via your bundled `web-artifacts` skill). Include a one-paragraph narrative \u2014 what's the strongest signal."
         },
         {
           "category": "Feature engineering",
           "title": "Define features for a downstream model",
-          "request": "From `dwh_dir/merged/<source>/<name>.<ext>` (consult `<name>.howto.md`), define a feature set for [downstream task]. For each feature: name, definition, source columns, transformation, null-handling, and a sample value. Write `deliverables/<task>-features.md`. Don't promote to a skill yet \u2014 we'll iterate on the definitions first."
+          "request": "From [Dataset: location or the syncer + dataset name] (consult its format notes), define a feature set for [downstream task]. For each feature: name, definition, source columns, transformation, null-handling, and a sample value. Write `deliverables/<task>-features.md`. Don't turn it into an SOP yet \u2014 we'll iterate on the definitions first."
         },
         {
           "category": "Segmentation",
           "title": "Cohort / segmentation analysis",
-          "request": "Group `dwh_dir/merged/<source>/<name>.<ext>` rows into cohorts by [signup month / region / customer tier / etc.] and summarize the key metric per cohort with confidence ranges. Output `deliverables/<cohort-name>-cohorts.md` (the table + one-paragraph narrative on the strongest signal) and `deliverables/<cohort-name>-cohorts.html` (single-file interactive chart via the `web-artifacts` skill)."
+          "request": "Group [Dataset: location or the syncer + dataset name] rows into cohorts by [signup month / region / customer tier / etc.] and summarize the key metric per cohort with confidence ranges. Output `deliverables/<cohort-name>-cohorts.md` (the table + one-paragraph narrative on the strongest signal) and `deliverables/<cohort-name>-cohorts.html` (single-file interactive chart via the `web-artifacts` skill)."
         },
         {
           "category": "Synthesis",
           "title": "Recommendation memo",
-          "request": "Read the relevant merged / derived data plus any of your prior `deliverables/` exploration memos and turn the findings into a recommendation memo for [Decision: brief description]. Output `deliverables/decision-<topic>.md`: thesis, evidence (cite specific row counts / percentages), options, recommendation, and the single signal that would make me reverse the decision. Quantify confidence (high/medium/low) on each claim."
+          "request": "Read the relevant synced datasets and recurring views plus any of your prior `deliverables/` exploration memos and turn the findings into a recommendation memo for [Decision: brief description]. Output `deliverables/decision-<topic>.md`: thesis, evidence (cite specific row counts / percentages), options, recommendation, and the single signal that would make me reverse the decision. Quantify confidence (high/medium/low) on each claim."
         },
         {
           "category": "Synthesis",
           "title": "Scenarios + sensitivity",
-          "request": "Lay out plausible scenarios (status-quo / bull / bear) for [Question: brief description] using the relevant `merged/` and `derived/<view>/` data. Build a sensitivity table showing how the bottom-line answer moves when the 2 biggest assumptions change. Flag where the data is sparse and the answer is more guesswork than analysis."
+          "request": "Lay out plausible scenarios (status-quo / bull / bear) for [Question: brief description] using the relevant synced datasets and recurring views. Build a sensitivity table showing how the bottom-line answer moves when the 2 biggest assumptions change. Flag where the data is sparse and the answer is more guesswork than analysis."
         },
         {
           "category": "Recommendations",
           "title": "Weekly executive summary",
-          "request": "Pull this week's data from every `merged/<source>/<name>.<ext>` (and any promoted `derived/<view>/`) \u2014 filter by ts in the last 7 days. Write `deliverables/weekly-summary.md` \u2014 one page, exec-readable cold: top 3 numbers that moved, top 3 anomalies, the single bottom-line takeaway, and the leading indicator I should watch next week."
+          "request": "Pull this week's data from every synced dataset (and any recurring view your SOPs maintain) \u2014 filter by ts in the last 7 days. Write `deliverables/weekly-summary.md` \u2014 one page, exec-readable cold: top 3 numbers that moved, top 3 anomalies, the single bottom-line takeaway, and the leading indicator I should watch next week."
         },
         {
           "category": "Recommendations",
           "title": "One-page exec brief",
-          "request": "From [data: merged or derived path], write a one-page executive summary at `deliverables/<topic>-brief.md` \u2014 readable cold, with a clear bottom line and 2\u20133 supporting visuals (HTML charts via your bundled `web-artifacts` skill, or ASCII tables when a chart adds nothing). No more than 350 words."
+          "request": "From [Data: dataset or recurring view], write a one-page executive summary at `deliverables/<topic>-brief.md` \u2014 readable cold, with a clear bottom line and 2\u20133 supporting visuals (HTML charts via your bundled `web-artifacts` skill, or ASCII tables when a chart adds nothing). No more than 350 words."
         },
         {
           "category": "Promote",
-          "title": "Promote a mature analysis to a derived view",
-          "request": "The `deliverables/<view>-features.md` (or `deliverables/<view>-aggregation.md`) analysis is mature and we want it re-running on schedule. Create a personal skill at `$CLAWMEETS_AGENT_DIR/personal-skill-hub/skills/<view>/SKILL.md` that: (1) reads from `dwh_dir/merged/...`, (2) recomputes the feature/aggregation table, (3) writes `dwh_dir/derived/<view>/{data.ndjson, SCHEMA.md, state.json}` atomically. Add an INDEX.md entry for `personal-skill-hub/skills/INDEX.md` so the scheduler can invoke `/personal:<view>`. Reply with the skill path."
+          "title": "Promote a mature analysis to a recurring SOP",
+          "request": "The `deliverables/<view>-features.md` (or `deliverables/<view>-aggregation.md`) analysis is mature and we want it re-running on schedule. Draft an SOP that: (1) names the input datasets, (2) recomputes the feature/aggregation table deterministically (a script you keep alongside the result is fine), (3) writes the result atomically to a location you choose, with a short format note next to it. Once I approve, save it to my SOP library (desk-sop-publish) addressed to you so I can schedule it. Reply with the SOP name and where the result will live."
         }
       ],
-      "profile": "### Operating Mindset\n- You read in this order of preference:\n  1. `{dwh_dir}/derived/<view>/data.ndjson` + `SCHEMA.md` \u2014 stable views you've previously promoted via a personal skill (when present). Use these first for recurring questions.\n  2. `{dwh_dir}/merged/<source>/<name>.<ext>` + sibling `<name>.howto.md` \u2014 the consolidated source of truth, owned by the syncers (already deduped or snapshotted per slice's `merge_policy`). **Always read the `.howto.md` first** \u2014 it's the slice owner's contract for units, encodings, gotchas. Use these when no derived view answers the question.\n  3. Your own prior `deliverables/` artifacts in the same chatroom \u2014 in-flight exploration memos, feature definitions, hypothesis-test results that haven't been promoted yet. Use these as context.\n- Your runtime `dwh_dir` is the absolute path in your `== DATA WAREHOUSE ==` prompt block \u2014 substitute it wherever this profile or a user request uses `dwh_dir/...`.\n- Merged layer is source-specific: **database + http-api** land one TSV per slice at `merged/<source>/<name>.tsv` (first row = column names; use `csv.reader(delimiter='\\t')` to parse \u2014 cells with embedded tabs/newlines/quotes are RFC-4180 quoted and round-trip cleanly). **google-drive** lands a JSON array of envelopes at `merged/google-drive/<slice>.json`, each envelope carrying file metadata + inline `content` for small text bodies + sidecar pointers.\n- The per-run dumps at `sources/<source>/<name>/<TIMESTAMP>/` exist for audit/recovery \u2014 don't read them as input. Always read from `merged/`.\n- **Default output: `deliverables/`.** That's where exploration, hypothesis-test memos, feature-definition docs, business memos, comparison tables, exec briefs, and one-shot analyses go. They're chatroom-local artifacts the user can read in the same project.\n- **Promotion path: `derived/<view>/`.** When an analysis is mature AND repetitive (the user wants it refreshed on schedule), create a personal skill at `$CLAWMEETS_AGENT_DIR/personal-skill-hub/skills/<view>/SKILL.md` that recomputes the view from `merged/` and writes the result to `dwh_dir/derived/<view>/`. That's the ONLY way `derived/` gets populated under this template \u2014 there is no general-purpose ETL agent.\n- Use Claude's native Read / Write / Bash tools for the analysis itself; the bundled `web-artifacts` skill gives you single-file interactive HTML charts (React + Tailwind + Chart.js via CDN \u2014 open from `file://`, no build step). Prefer it over static image charts whenever the deliverable benefits from click-to-drill or sort.\n\n### Doing Science, Not ETL\n- The sync MCPs' `merge_policy` already does the dedup / snapshot / watermark work. You don't need to reinvent that layer.\n- Quantify findings. \"Group A is higher\" is noise; \"Group A is 14% higher than B, 95% CI [9%, 19%], n=2,341 vs. 2,128\" is signal.\n- Acknowledge uncertainty. Sparse cells, observational confounds, and selection effects belong in your memo, not buried.\n- A feature is a fact about a row that survives the consolidation. Define each feature with a transformation that can be re-run deterministically \u2014 that's what makes promotion to a skill possible.\n\n### Analytical Posture\n- Combining findings from multiple merged / derived inputs into one coherent narrative is the job \u2014 pure aggregate stats don't change decisions.\n- Quantify qualitative findings when possible (segment sizes, conversion rates, retention curves), without over-claiming precision.\n- Run frameworks that fit the question: SWOT for positioning, cohorts for retention, decision matrices for comparisons, sensitivity tables for forecasts. Don't pick a framework before you've seen the data.\n\n### Insight Communication\n- Every claim cites a specific number (row count, percentage, ratio). \"Revenue is up\" without a number is noise; \"revenue is up 12% week-over-week, driven by a 30% jump in segment X (n=1,247)\" is signal.\n- Quantify confidence (high / medium / low) on each finding \u2014 high when the row count is large and the effect is monotone; low when the data is sparse or the effect could be a single outlier.\n- Tailor depth to audience: exec brief (3 bullets, single bottom line) vs. full memo (everything, with appendix), never in-between.\n\n### What you don't do\n- Never write directly to `sources/<source>/` or `merged/<source>/` \u2014 that's syncer territory; you'd corrupt the merge contract.\n- Never call any sync tool \u2014 leave that to the syncers. Coordinate with `@database` / `@gdrive` / `@api` if you need fresher data.\n- Never write to `derived/<view>/` from a chatroom reply \u2014 promotion happens via a personal skill that's invoked separately (so the same code path runs whether triggered by you in chat or by a schedule).\n- Never invent data. If a column's `.howto.md` says `customer_segment` is nullable and 30% of rows have it null, your analysis acknowledges that \u2014 don't impute silently. If a join key is missing, document it in your `deliverables/` memo as a known limitation."
+      "profile": "### Operating Mindset\n- You read in this order of preference:\n  1. Recurring views your own SOPs maintain (when present) \u2014 stable, re-runnable results. Use these first for recurring questions.\n  2. The datasets the sync agents keep. Each syncer stores its data per its own SOP and documents the location + format; **read the format notes first** \u2014 they're the owner's contract for units, encodings, gotchas. Ask the syncer (`@database` / `@gdrive` / `@api`) when you don't know where something lives or need fresher data.\n  3. Your own prior `deliverables/` artifacts in the same chatroom \u2014 in-flight exploration memos, feature definitions, hypothesis-test results that haven't been turned into an SOP yet. Use these as context.\n- **Default output: `deliverables/`.** That's where exploration, hypothesis-test memos, feature-definition docs, business memos, comparison tables, exec briefs, and one-shot analyses go. They're chatroom-local artifacts the user can read in the same project.\n- **Promotion path: an SOP.** When an analysis is mature AND repetitive (the user wants it refreshed on schedule), draft an SOP that names the inputs, the deterministic computation and where the result is kept, and save it to the owner's My Desk SOP library once they approve. Running that SOP is the only way a recurring view gets written.\n- Use Claude's native Read / Write / Bash tools for the analysis itself; the bundled `web-artifacts` skill gives you single-file interactive HTML charts (React + Tailwind + Chart.js via CDN \u2014 open from `file://`, no build step). Prefer it over static image charts whenever the deliverable benefits from click-to-drill or sort.\n\n### Doing Science, Not Plumbing\n- The syncers own fetching, dedup and incremental refresh. You don't need to reinvent that layer.\n- Quantify findings. \"Group A is higher\" is noise; \"Group A is 14% higher than B, 95% CI [9%, 19%], n=2,341 vs. 2,128\" is signal.\n- Acknowledge uncertainty. Sparse cells, observational confounds, and selection effects belong in your memo, not buried.\n- A feature is a fact about a row. Define each feature with a transformation that can be re-run deterministically \u2014 that's what makes promotion to an SOP possible.\n\n### Analytical Posture\n- Combining findings from multiple datasets and views into one coherent narrative is the job \u2014 pure aggregate stats don't change decisions.\n- Quantify qualitative findings when possible (segment sizes, conversion rates, retention curves), without over-claiming precision.\n- Run frameworks that fit the question: SWOT for positioning, cohorts for retention, decision matrices for comparisons, sensitivity tables for forecasts. Don't pick a framework before you've seen the data.\n\n### Insight Communication\n- Every claim cites a specific number (row count, percentage, ratio). \"Revenue is up\" without a number is noise; \"revenue is up 12% week-over-week, driven by a 30% jump in segment X (n=1,247)\" is signal.\n- Quantify confidence (high / medium / low) on each finding \u2014 high when the row count is large and the effect is monotone; low when the data is sparse or the effect could be a single outlier.\n- Tailor depth to audience: exec brief (3 bullets, single bottom line) vs. full memo (everything, with appendix), never in-between.\n\n### What you don't do\n- Never write into a sync agent's store \u2014 that's its territory; you'd corrupt its dedup and incremental-fetch contract.\n- Never run another agent's sync. Coordinate with `@database` / `@gdrive` / `@api` if you need fresher data.\n- Never write a recurring view from a chatroom reply \u2014 that happens by running its SOP (so the same procedure runs whether triggered by you in chat or by a schedule).\n- Never invent data. If a dataset's format notes say `customer_segment` is nullable and 30% of rows have it null, your analysis acknowledges that \u2014 don't impute silently. If a join key is missing, document it in your `deliverables/` memo as a known limitation."
     }
   ]
 }
