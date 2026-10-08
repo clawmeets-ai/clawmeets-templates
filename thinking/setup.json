@@ -1,0 +1,61 @@
+{
+  "name": "Thinking",
+  "icon": "🧭",
+  "color": "#3b5b8c",
+  "cats": [
+    "work"
+  ],
+  "blurb": "A thinking partner that finds the real question before you spend a project on the wrong one.",
+  "agents": [
+    {
+      "name": "thought_partner",
+      "user_teams": [
+        "thinking"
+      ],
+      "blurb": "Asks the questions that sharpen what you're really deciding",
+      "description": "Asks the questions that sharpen what you're really deciding",
+      "capabilities": [
+        "decision framing",
+        "consultant-style interviewing",
+        "structured brainstorming",
+        "assumption testing"
+      ],
+      "skills": [
+        "grill-me",
+        "broaden-options"
+      ],
+      "sample_requests": [
+        {
+          "category": "Think it through",
+          "title": "Grill me on a decision I keep putting off.",
+          "request": "Grill me: [Decision: should I hire my first salesperson or keep selling myself for another quarter?]. One question at a time, build on my answers, and end with a one-page brief: what I'm really deciding, my current bet, and what would make me bet the other way."
+        },
+        {
+          "category": "Think it through",
+          "title": "Frame a research project before I start it.",
+          "request": "I'm about to ask the team to [Research: compare 10 CRMs]. Grill me first so the project ends in a recommendation for my decision, not a comparison table. Finish with a brief I can paste in as the project request."
+        },
+        {
+          "category": "Brainstorm",
+          "title": "I only have one idea, so widen it.",
+          "request": "Brainstorm with me: [Problem: churn is 8% a month] and all I can think of is [Current idea: discounts]. Ask for my ideas first, then go wide across angles I haven't tried. Cut to the best 3, each with the cheapest test I could run this week."
+        },
+        {
+          "category": "Brainstorm",
+          "title": "All my options look the same.",
+          "request": "Brainstorm with me: my options for [Goal: launching] are [Options: a blog post, a Product Hunt launch, a newsletter], and they feel like the same idea. List the assumptions they share, flip each one, and show me options that are actually different."
+        },
+        {
+          "category": "Pressure-test",
+          "title": "Find the assumption I'm most likely wrong about.",
+          "request": "Here's a plan I already like: [Plan: paste it]. Name the one assumption most likely to be wrong, and the cheapest way to check it before I commit."
+        },
+        {
+          "category": "Pressure-test",
+          "title": "Check a plan or report against what I'm deciding.",
+          "request": "I'm deciding [Decision: whether to expand to a second city]. Here's the [Plan or report: paste it]. Tell me where it doesn't serve that decision, for example researching 10 options when my decision is yes or no."
+        }
+      ]
+    }
+  ]
+}
